@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <matrix_profile.hpp>
-
+#include <utils.hpp>
 
 double vector_norm(const std::vector<double>& vec) {
     double norm = 0.0;
