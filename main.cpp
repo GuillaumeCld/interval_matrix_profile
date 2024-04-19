@@ -29,6 +29,21 @@ double compute_vector_difference_norm(const std::vector<double>& vec1, const std
     return vector_norm(difference);
 }
 
+void compareStumpy(){
+  std::vector<double> ts;
+  readFile<double>("Data/ts_sst.txt", ts, "%f");
+  std::vector<double> mp_ref;
+  readFile<double>("Data/mp_sst.txt", mp_ref, "%f");
+
+  int window_size = 7;
+  auto mpOutput = computeMatrixProfileSTOMP(ts, window_size);
+  std::vector<double> matrix_profile_stomp = std::get<0>(mpOutput);
+
+  double difference_norm = compute_vector_difference_norm(mp_ref, matrix_profile_stomp);
+  std::cout << "Norm of the difference: " << difference_norm << std::endl;
+
+}
+
 // Function to test computation speed of matrix profile
 void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
     // Generate random vector
@@ -92,20 +107,9 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
 
 
 int main() {
-  std::vector<double> data = {1.0, 2.0, 3.0, 4.0, 5.0,
-                              6.0, 7.0, 8.0, 9.0, 10.0};
-  int window_size = 3;
+  compareStumpy();
 
-  auto mpOutput = computeMatrixProfileBruteForce(data, window_size);
-  std::vector<double> matrix_profile = std::get<0>(mpOutput);
-
-  std::cout << "Matrix Profile: ";
-  for (auto value : matrix_profile) {
-    std::cout << value << " ";
-  }
-  std::cout << std::endl;
-
-  testMatrixProfileComputationSpeed(131072, 64);
+  // testMatrixProfileComputationSpeed(20000, 64);
 
   return 0;
 }
