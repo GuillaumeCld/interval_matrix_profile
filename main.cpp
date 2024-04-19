@@ -105,7 +105,7 @@ int main() {
   }
   std::cout << std::endl;
 
-  testMatrixProfileComputationSpeed(131072, 64);
+  testMatrixProfileComputationSpeed(30000, 7);
 
   return 0;
 }
