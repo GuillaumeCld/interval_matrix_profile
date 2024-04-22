@@ -101,10 +101,16 @@ void compareStumpy(){
   min = std::min_element(matrix_profile_brute_force.begin(), matrix_profile_brute_force.end());
   std::cout << "BruteForce: max " << *max << ", min " << *min << '\n';
 
+  max = std::max_element(matrix_profile_stompv2.begin(), matrix_profile_stompv2.end());
+  min = std::min_element(matrix_profile_stompv2.begin(), matrix_profile_stompv2.end());
+  std::cout << "STOMPV2: max " << *max << ", min " << *min << '\n';
 
   max = std::max_element(ts.begin(), ts.end()); 
   min = std::min_element(ts.begin(), ts.end());
   std::cout << "ts: max " << *max << ", min " << *min << '\n';
+
+
+
 
   // Write the result to a file
   std::ofstream outputFile("../Data/matrix_profile_bf.txt");
@@ -148,6 +154,26 @@ void compareStumpy(){
     } else {
         std::cerr << "Unable to open file for writing.\n";
     }
+    std::ofstream outputFile4("../Data/matrix_profile_stompv2.txt");
+    if (outputFile4.is_open()) {
+      for (const auto& value : matrix_profile_stompv2) {
+          outputFile4 << value << "\n";
+      }
+      outputFile4.close();
+        std::cout << "Matrix profile has been written to matrix_profile.txt\n";
+    } else {
+        std::cerr << "Unable to open file for writing.\n";
+    }
+    std::ofstream outputFile5("../Data/index_profile_stompv2.txt");
+    if (outputFile5.is_open()) {
+      for (const auto& value : index_profile_stompv2) {
+          outputFile5 << value << "\n";
+      }
+      outputFile5.close();
+        std::cout << "Matrix profile has been written to matrix_profile.txt\n";
+    } else {
+        std::cerr << "Unable to open file for writing.\n";
+    }
 }
 
 // Function to test computation speed of matrix profile
@@ -171,7 +197,7 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
     auto mpOutput = computeMatrixProfileBruteForce(data, window_size);
     std::vector<double> matrix_profile = std::get<0>(mpOutput);
     auto end_time = std::chrono::high_resolution_clock::now();
-
+    
     // Compute duration
     std::chrono::duration<double> duration = end_time - start_time;
 
@@ -190,15 +216,27 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
     // Compute duration
     duration = end_time - start_time;
 
+ 
     // Output results
     std::cout << "Matrix profile computed for vector of size " << vector_size << " with window size " << window_size << std::endl;
     std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;  
   
-    if (std::equal(matrix_profile.begin(), matrix_profile.end(), matrix_profile_stomp.begin()))
-      std::cout << "success" << std::endl;
+
+    start_time = std::chrono::high_resolution_clock::now();
+    mpOutput = computeMatrixProfileSTOMPV2(data, window_size);
+    std::vector<double> matrix_profile_stompv2 = std::get<0>(mpOutput);
+    end_time = std::chrono::high_resolution_clock::now();
+    duration = end_time - start_time;
+    std::cout << "Matrix profile computed for vector of size " << vector_size << " with window size " << window_size << std::endl;
+    std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
+
+
     double difference_norm = compute_vector_difference_norm(matrix_profile, matrix_profile_stomp);
     std::cout << "Norm of the difference: " << difference_norm << std::endl;
-    
+  
+    difference_norm = compute_vector_difference_norm(matrix_profile, matrix_profile_stompv2);
+    std::cout << "Norm of the difference: " << difference_norm << std::endl;
+
     std::vector<double>::iterator result;
     result = std::max_element(matrix_profile.begin(), matrix_profile.end());
     std::cout << " max " << *result << '\n';
@@ -209,14 +247,37 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
     std::cout << " min " << *result << '\n';
     result = std::min_element(matrix_profile_stomp.begin(), matrix_profile_stomp.end());
     std::cout << " min " << *result << '\n';
+  
+    result = std::max_element(matrix_profile_stompv2.begin(), matrix_profile_stompv2.end());
+    std::cout << " max " << *result << '\n';
+    result = std::min_element(matrix_profile_stompv2.begin(), matrix_profile_stompv2.end());
+    std::cout << " min " << *result << '\n';
   }
 
+void test_stompv2(int vector_size, int window_size) {
+    // Generate random vector
+
+    std::vector<double> data;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0.0, 1.0); // Random numbers between 0 and 1
+
+    std::cout << "Random gen" << std::endl;
+
+    for (int i = 0; i < vector_size; ++i) {
+        data.push_back(dis(gen));
+    }
+
+    std::cout << "STOMP" << std::endl;
+    auto mpOutput = computeMatrixProfileSTOMPV2(data, window_size);
+} 
 
 int main() {
   // testDistance();
    compareStumpy();
 
-  testMatrixProfileComputationSpeed(15000, 7);
+  // testMatrixProfileComputationSpeed(50, 7);
+  // test_stompv2(50, 7);
 
   return 0;
 }

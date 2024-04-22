@@ -161,19 +161,6 @@ auto computeMatrixProfileSTOMP(const std::vector<T> &data,
 }
 
 
-
-auto update_row = [&](int i, int j, int global_i, int block_column_start, int window_size, std::vector<T> &row, const std::vector<T> &data) {
-    const int global_j = block_column_start + i + j;
-    return row[j] - std::pow(data[global_j - 1] - data[global_i - 1], 2) + std::pow(data[global_j + window_size - 1] - data[global_i + window_size - 1], 2);
-};
-
-auto update_min = [&](int i, int j, int thread_id, int global_i, int global_j, int exclude) {
-    if (row[j] < block_min_value_per_row[thread_id][i] && (global_j < global_i - exclude || global_j > global_i + exclude)) {
-        block_min_value_per_row[thread_id][i] = row[j];
-        block_min_indice_per_row[thread_id][i] = global_j;
-    }
-};
-
 template <typename T>
 auto computeMatrixProfileSTOMPV2(const std::vector<T> &data,
                                int window_size) {
@@ -246,14 +233,26 @@ auto computeMatrixProfileSTOMPV2(const std::vector<T> &data,
                 block_min_value_per_row[thread_id][0] = row[j];
                 block_min_indice_per_row[thread_id][0] = global_j;
             }
-            row0[j] = distance;  // CACHE INVALIDATION
+            row0[global_j] = distance;  // CACHE INVALIDATION
         }
         #pragma omp barrier
 
         const int last_meta_row_height = (n_sequence%block_height!=0) ? n_sequence%block_height : block_height;
+        
+        
+        auto update_row = [&](int i, int j, int global_i, int block_column_start) {
+            const int global_j = block_column_start + i + j;
+            return row[j] - std::pow(data[global_j - 1] - data[global_i - 1], 2) + std::pow(data[global_j + window_size - 1] - data[global_i + window_size - 1], 2);
+        };
+
+        auto update_min = [&](int i, int j, int thread_id, int global_i, int global_j, int exclude, std::pair<T, int>& min_pair) {
+            if (row[j] < min_pair.first && (global_j < global_i - exclude || global_j > global_i + exclude)) {
+                min_pair.first = row[j];
+                min_pair.second = global_j;
+            }
+        };
         // For each meta row
         for (int meta_row_id=0; meta_row_id < meta_rows_num; ++meta_row_id) {
-
             block_id = (meta_row_id + thread_id) % threads_num;
             // Define the block's row start and end: height
             int block_row_start = meta_row_id==0 ? 1 : 0;
@@ -264,6 +263,8 @@ auto computeMatrixProfileSTOMPV2(const std::vector<T> &data,
             // Compute all other rows in block
             for (int i=block_row_start; i < block_row_end; ++i) {
                 const int global_i = meta_row_id*block_height + i; // Global row index in the distance matrix
+                std::pair<T, int> min_pair{std::numeric_limits<T>::max(), 0}; // dont take into account the first row 0 !!!!!!!!!
+
                 // Semi blocks == last block
                 if (block_column_end == n_sequence) {
                     // left semi block
@@ -271,55 +272,42 @@ auto computeMatrixProfileSTOMPV2(const std::vector<T> &data,
                         row[0] = row0[global_i];
                         block_min_value_per_row[thread_id][i] = row[0];
                         for (int j = 1; j < i; ++j) {
-                            const int global_j = block_column_start + i + j;
-                            row[j] = row[j] - std::pow(data[global_j-1]-data[global_i-1],2) + std::pow(data[global_j+window_size-1]-data[global_i+window_size-1],2);
-                            if (row[j] < block_min_value_per_row[thread_id][i] and (global_j < global_i - exclude or global_j > global_i + exclude)) {
-                                block_min_value_per_row[thread_id][i] = row[j];
-                                block_min_indice_per_row[thread_id][i] = global_j;
-                            }
+                            row[j] = update_row(i, j, global_i, block_column_start);
+                            update_min(i, j, thread_id, global_i, block_column_start + i + j, exclude, min_pair);
                         }
                     }
                     // right semi block
                     if (i < block_height - 1) {
-                        for (int j = 0; j < block_width; ++j) {
-                            const int global_j = block_column_start + i + j;
-                            row[j] = row[j-1] - std::pow(data[global_j-1]-data[global_i-1],2) + std::pow(data[global_j+window_size-1]-data[global_i+window_size-1],2);
-                            // local minimum per row in block
-                            if (row[j] < block_min_value_per_row[thread_id][i] and (global_j < global_i - exclude or global_j > global_i + exclude)) {
-                                block_min_value_per_row[thread_id][i] = row[j];
-                                block_min_indice_per_row[thread_id][i] = global_j;
-                            }
+                        for (int j = i; j < block_width; ++j) {
+                            row[j] = update_row(i, j, global_i, block_column_start);
+                            update_min(i, j, thread_id, global_i, block_column_start + i + j, exclude, min_pair);
                         }
                     }
                 }
                 else {
                     // Default block
                     for (int j = 0; j < block_width; ++j) {
-                        const int global_j = block_column_start + i + j;
-                        row[j] = row[j] - std::pow(data[global_j-1]-data[global_i-1],2) + std::pow(data[global_j+window_size-1]-data[global_i+window_size-1],2);
-                        // local minimum per row in block
-                        if (row[j] < block_min_value_per_row[thread_id][i] and (global_j < global_i - exclude or global_j > global_i + exclude)) {
-                            block_min_value_per_row[thread_id][i] = row[j];
-                            block_min_indice_per_row[thread_id][i] = global_j;
-                        }
+                        row[j] =  update_row(i, j, global_i, block_column_start);
+                        update_min(i, j, thread_id, global_i, block_column_start + i + j, exclude, min_pair);
                     }
                 }
+                block_min_value_per_row[thread_id][i] = min_pair.first;
+                block_min_indice_per_row[thread_id][i] = min_pair.second;
             }
             #pragma omp barrier
             // Compute global minimum per row
             if (thread_id < block_row_end) {
                 auto min = matrix_profile[meta_row_id*block_height + thread_id];
                 int ind = 0;
-                for (int k = 0; k < threads_num; ++k) {
+                for (int k = 0; k < block_row_end; ++k) {
                     if (block_min_value_per_row[k][thread_id] < min) {
                         min = block_min_value_per_row[k][thread_id];
                         ind = block_min_indice_per_row[k][thread_id];
                     }
                     block_min_value_per_row[k][thread_id] = std::numeric_limits<T>::max();
                 }
-                matrix_profile[meta_row_id*block_height + thread_id] = std::sqrt(T(0)); // CACHE INVALIDATION
+                matrix_profile[meta_row_id*block_height + thread_id] = std::sqrt(std::abs(min)); // abs to fix min=-0,0000 // CACHE INVALIDATION
                 profile_index[meta_row_id*block_height + thread_id] = ind;              // CACHE INVALIDATION
-                auto tmp = row;
             }
             #pragma omp barrier
         }

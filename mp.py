@@ -24,9 +24,11 @@ with open("Data/mp_sst.txt", "w") as file:
 
 mp_bf = np.zeros_like(mp)
 mp_stomp = np.zeros_like(mp)
+mp_stompv2 = np.zeros_like(mp)
 
 ind_bf = np.zeros(len(mp), dtype=int)
 ind_stomp = np.zeros(len(mp), dtype=int)
+ind_stompv2 = np.zeros(len(mp), dtype=int)
 
 with open("Data/matrix_profile_bf.txt", "r") as file:
     for i, line in enumerate(file):
@@ -37,6 +39,11 @@ with open("Data/matrix_profile_stomp.txt", "r") as file:
     for i, line in enumerate(file):
         mp_stomp[i] = float(line)   
 
+with open("Data/matrix_profile_stompv2.txt", "r") as file:
+    for i, line in enumerate(file):
+        mp_stompv2[i] = float(line)   
+
+
 with open("Data/index_profile_bf.txt", "r") as file:
     for i, line in enumerate(file):
         ind_bf[i] = int(line)
@@ -45,6 +52,11 @@ with open("Data/index_profile_bf.txt", "r") as file:
 with open("Data/index_profile_stomp.txt", "r") as file:
     for i, line in enumerate(file):
         ind_stomp[i] = int(line)   
+
+with open("Data/index_profile_stompv2.txt", "r") as file:
+    for i, line in enumerate(file):
+        ind_stompv2[i] = int(line)   
+
 
 
 print("Array equal to STUMP with BF: ", np.allclose(mp, mp_bf))
@@ -71,6 +83,9 @@ plt.figure()
 plt.plot(mp-mp_stomp)    
 plt.savefig("Data/diff_stomp.png")
 
+plt.figure()
+plt.plot(mp-mp_stompv2)    
+plt.savefig("Data/diff_stompv2.png")
 
 
 plt.figure()
@@ -80,14 +95,16 @@ plt.savefig("Data/diff_bf_stomp.png")
 hover_text_1 = [f"{i}" for i in stumpy_out[:,1]]
 hover_text_2 = [f"{i}" for i in ind_bf]
 hover_text_3 = [f"{i}" for i in ind_stomp]
+hover_text_4 = [f"{i}" for i in ind_stompv2]
 # Create traces
 trace1 = go.Scatter(y=mp, mode='lines', name='STUMP', text=hover_text_1)
 trace2 = go.Scatter(y=mp_bf, mode='lines', name='BF', text=hover_text_2)
 trace3 = go.Scatter(y=mp_stomp, mode='lines', name='STOMP', text=hover_text_3)
+trace4 = go.Scatter(y=mp_stompv2, mode='lines', name='STOMPV2', text=hover_text_4)
 
 # Layout
 layout = go.Layout(xaxis=dict(title='Distance'))
 
 # Plot
-fig = go.Figure(data=[trace1, trace2, trace3], layout=layout)
+fig = go.Figure(data=[trace1, trace2, trace3, trace4], layout=layout)
 fig.show()
