@@ -270,14 +270,23 @@ void test_stompv2(int vector_size, int window_size) {
 
     std::cout << "STOMP" << std::endl;
     auto mpOutput = computeMatrixProfileSTOMPV2(data, window_size);
+    std::vector<double> matrix_profile_stompv2 = std::get<0>(mpOutput);
+
+    printf("Brute force\n");
+    mpOutput = computeMatrixProfileBruteForce(data, window_size);
+    std::vector<double> matrix_profile_stompbf = std::get<0>(mpOutput);
+
+
+      double difference_norm = compute_vector_difference_norm(matrix_profile_stompbf, matrix_profile_stompv2);
+    std::cout << "Norm of the difference: " << difference_norm << std::endl;
 } 
 
 int main() {
   // testDistance();
-   compareStumpy();
+  //  compareStumpy();
 
   // testMatrixProfileComputationSpeed(50, 7);
-  // test_stompv2(50, 7);
+  test_stompv2(10, 1);
 
   return 0;
 }
