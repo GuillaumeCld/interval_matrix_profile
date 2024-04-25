@@ -47,7 +47,7 @@ auto computeMatrixProfileBruteForce(const std::vector<T> &data,
         }
         matrix_profile[i] = min;
         profile_index[i] = min_index; 
-        printf("min %d %d %f\n", i, profile_index[i], matrix_profile[i]*matrix_profile[i]);
+        // printf("min %d %d %f\n", i, profile_index[i], matrix_profile[i]*matrix_profile[i]);
     }
 
     return std::make_tuple(matrix_profile, profile_index);
@@ -70,7 +70,7 @@ auto computeMatrixProfileSTOMP(const std::vector<T> &data,
     std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
     std::vector<int> profile_index(n_sequence, 0);
 
-    std::vector<T> row0(n_sequence, T(0));
+    std::vector<T> first_row(n_sequence, T(0));
     std::vector<T> row(n_sequence, T(0));
     std::vector<T> oldrow(n_sequence, T(0));
     std::vector<T> nrow(n_sequence, T(0));
@@ -79,7 +79,7 @@ auto computeMatrixProfileSTOMP(const std::vector<T> &data,
     std::vector<T> local_min_values(max_threads_num, std::numeric_limits<T>::max());
     std::vector<int> local_mins_indices(max_threads_num, 0);
 
-    #pragma omp parallel shared(row0, row, nrow, matrix_profile, profile_index, local_min_values, local_mins_indices)
+    #pragma omp parallel shared(first_row, row, nrow, matrix_profile, profile_index, local_min_values, local_mins_indices)
     {
         int threads_num = omp_get_num_threads();
         int thread_id = omp_get_thread_num();
@@ -94,7 +94,7 @@ auto computeMatrixProfileSTOMP(const std::vector<T> &data,
         std::span view = std::span(&data[0], window_size);
         for (int j = start; j < end; ++j) {
             const auto distance = dotProduct(view, std::span(&data[j], window_size));
-            row0[j] = distance;
+            first_row[j] = distance;
             row[j] = distance;
 
             // local minimum per chunk 
@@ -125,10 +125,10 @@ auto computeMatrixProfileSTOMP(const std::vector<T> &data,
         #pragma omp barrier
         // Compute all other rows
         for (int i = 1; i < n_sequence; ++i) {
-            // Compute the i-th row of the distance matrix based on the (i-1)-th and the first one (row0)
+            // Compute the i-th row of the distance matrix based on the (i-1)-th and the first one (first_row)
             // First chunk
             if (thread_id == 0) {
-                nrow[0] = row0[i];
+                nrow[0] = first_row[i];
                 start = 1;
             }
             
@@ -148,7 +148,7 @@ auto computeMatrixProfileSTOMP(const std::vector<T> &data,
                 // Global minimum on row
                 auto min = matrix_profile[i];
                 int ind = 0;
-                local_min_values[0] = std::min(local_min_values[0], row0[i]);
+                local_min_values[0] = std::min(local_min_values[0], first_row[i]);
                 for (int k = 0; k < threads_num; ++k) {
                     if (local_min_values[k] < min) {
                         min = local_min_values[k];
@@ -179,13 +179,8 @@ auto computeMatrixProfileSTOMPV2(const std::vector<T> &data,
 
     std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
     std::vector<int> profile_index(n_sequence, 0);
-    std::vector<T> row0(n_sequence, T(0));
-
-
-    std::vector<std::vector<T>> block_min_value_per_row;
-    std::vector<std::vector<int>> block_min_indice_per_row;   
-
-    printf("Init\n");
+    std::vector<T> first_row(n_sequence, T(0));
+    std::vector<std::vector<std::pair<T,int>>> block_min_pair_per_row;
     #pragma omp parallel
     {
         const int threads_num = omp_get_num_threads();
@@ -194,14 +189,11 @@ auto computeMatrixProfileSTOMPV2(const std::vector<T> &data,
         const int block_height = threads_num;
         #pragma omp single
         {
-            block_min_value_per_row.resize(threads_num);
-            block_min_indice_per_row.resize(threads_num);
+            block_min_pair_per_row.resize(threads_num);
         }
-        block_min_value_per_row[thread_id] = std::vector<T>(block_height, std::numeric_limits<T>::max());
-        block_min_indice_per_row[thread_id] = std::vector<int>(block_height, 0);
+        block_min_pair_per_row[thread_id] = std::vector<std::pair<T,int>>(block_height);
     }
-
-    #pragma omp parallel shared(matrix_profile, profile_index, block_min_value_per_row, block_min_indice_per_row, row0, data)
+    #pragma omp parallel shared(matrix_profile, profile_index, block_min_pair_per_row, first_row, data)
     {
         int block_id;
         const int threads_num = omp_get_num_threads();
@@ -224,47 +216,38 @@ auto computeMatrixProfileSTOMPV2(const std::vector<T> &data,
             block_width = n_sequence / threads_num;
             initial_block_start = thread_id * block_width;
         }
-
-
         const int meta_rows_num = n_sequence%block_height == 0 ? n_sequence / block_height : n_sequence / block_height + 1;
-
         std::vector<T> row(block_width, T(0));
-
-
-        // Compute first row
-        std::span view = std::span(&data[0], window_size);
-        for (int j=0; j < block_width; ++j) {
-            const int global_j = initial_block_start + j;
-            const auto distance = dotProduct(view, std::span(&data[global_j], window_size));
-            row[j] = distance;   
-            // Local minimum per block 
-            if (row[j] < block_min_value_per_row[thread_id][0] and (global_j < - exclude or global_j > exclude) ) {
-                block_min_value_per_row[thread_id][0] = row[j];
-                block_min_indice_per_row[thread_id][0] = global_j;
-            }
-            row0[global_j] = distance;  // CACHE INVALIDATION
-
-            //  printf("%d %d %f\n", 0, initial_block_start+ j, distance);
-        }
-        #pragma omp barrier
-
-        const int last_meta_row_height = (n_sequence%block_height!=0) ? n_sequence%block_height : block_height;
-        
-        
-        auto update_row = [&](int i, int j, int global_i, int block_column_start) {
-            const int global_j = block_column_start + i + j;
-            return row[j] - std::pow(data[global_j - 1] - data[global_i - 1], 2) + std::pow(data[global_j + window_size - 1] - data[global_i + window_size - 1], 2);
-        };
-
+        // lambda functions definitions
         auto update_min = [&](int i, int j, int thread_id, int global_i, int global_j, int exclude, std::pair<T, int>& min_pair) {
             if (row[j] < min_pair.first && (global_j < global_i - exclude || global_j > global_i + exclude)) {
                 min_pair.first = row[j];
                 min_pair.second = global_j;
             }
         };
+        auto update_row = [&](int global_i, int global_j, int prev_int) {
+            auto tmp_prev = data[global_j - 1] - data[global_i - 1];
+            auto tmp_next = data[global_j + window_size - 1] - data[global_i + window_size - 1];
+            return row[prev_int] - tmp_prev*tmp_prev + tmp_next*tmp_next;
+        };
+        // Compute first row
+        std::span view = std::span(&data[0], window_size);
+        std::pair<T, int> first_min_pair{std::numeric_limits<T>::max(), -1};
+        for (int j=0; j < block_width; ++j) {
+            const int global_j = initial_block_start + j;
+            const auto distance = dotProduct(view, std::span(&data[global_j], window_size));
+            row[j] = distance;   
+            update_min(0, j, thread_id, 0, global_j, exclude, first_min_pair);
+            first_row[global_j] = distance;  // CACHE INVALIDATION
+            //  printf("%d %d %f\n", 0, initial_block_start+ j, distance);
+        }
+        block_min_pair_per_row[thread_id][0] = first_min_pair;
+        
+        #pragma omp barrier
+
+        const int last_meta_row_height = (n_sequence%block_height!=0) ? n_sequence%block_height : block_height;
         // For each meta row
         for (int meta_row_id=0; meta_row_id < meta_rows_num; ++meta_row_id) {
-            if (meta_row_id<=1) printf("Meta row %d\n", meta_row_id);
             block_id = (meta_row_id + thread_id) % threads_num;
             // Define the block's row start and end: height
             int block_row_start = meta_row_id==0 ? 1 : 0;
@@ -280,8 +263,7 @@ auto computeMatrixProfileSTOMPV2(const std::vector<T> &data,
             // Compute all other rows in block
             for (int i=block_row_start; i < block_row_end; ++i) {
                 const int global_i = meta_row_id*block_height + i; // Global row index in the distance matrix
-                std::pair<T, int> min_pair{std::numeric_limits<T>::max(), -1}; // dont take into account the first row 0 !!!!!!!!!
-
+                std::pair<T,int> min_pair{std::numeric_limits<T>::max(), -1};
                 // Semi blocks == last block
                 if (block_column_end == n_sequence) {
                     int length  = n_sequence - block_column_start;
@@ -289,68 +271,101 @@ auto computeMatrixProfileSTOMPV2(const std::vector<T> &data,
                     int left_upperbound = block_width - length + i; 
 
                     // right semi block
-                    // if (i < block_row_end - 1) {
-                    // printf("length %d %d \n", length, right_upperbound);
-                    for (int j = right_upperbound-1; j >= 0 ; --j) {
+                    int stop = (block_column_start==0) ? 1 : 0;
+                    for (int j = right_upperbound-1; j >= stop ; --j) {
                         const int global_j = block_column_start + j + i;
+                        int shift = (left_upperbound==0) ? 0 : left_upperbound-1;
+                        auto old_row = row[j+shift];
 
-                        auto old_row = row[left_upperbound+j-1] ;
-                        row[left_upperbound+j] =  row[left_upperbound+j-1] - std::pow(data[global_j - 1] - data[global_i - 1], 2) + std::pow(data[global_j + window_size - 1] - data[global_i + window_size - 1], 2);
+                        row[left_upperbound+j] = update_row(global_i, global_j, shift+j);
                         update_min(i, j, thread_id, global_i, block_column_start + j +i, exclude, min_pair);
-                        if (global_i<=3) {
-                            // printf("R %d %d %d %d %f %f %d %d %d\n", global_i, global_j, i, j, row[left_upperbound+j], old_row, block_column_start, right_upperbound, left_upperbound);    
+
+                        if (global_i<=3)  printf("R %d %d %d %d %f %f %d\n", global_i, global_j, i, j, row[left_upperbound+j], old_row, thread_id);    
+                        if (row[left_upperbound+j] != dotProduct(std::span(&data[global_i], window_size), std::span(&data[global_j], window_size))){
+                            printf("Error in right semi block %d %d of length %d and width %d in line %d\n", global_i, global_j, length, block_width, i);
+                            printf("Expected %f, got %f\n", dotProduct(std::span(&data[global_i], window_size), std::span(&data[global_j], window_size)), row[left_upperbound+j]);
+                            printf("With old %f instead of %f\n", old_row, dotProduct(std::span(&data[global_i-1], window_size), std::span(&data[global_j-1], window_size)));
+                            throw std::runtime_error("Error in right semi block\n");
                         }
                     }
-                    // }
                     // left semi block
                     if (block_column_start + block_width >= n_sequence) {    
                         for (int j = left_upperbound-1; j > 0; --j) {
                             int global_j = j;
-                            auto old_row = row[j-1] ;
-                            row[j] = row[j-1] - std::pow(data[global_j - 1] - data[global_i - 1], 2) + std::pow(data[global_j + window_size - 1] - data[global_i + window_size - 1], 2);
+                            auto old_row = row[j-1];
+                            row[j] = update_row(global_i, global_j, j-1);
                             update_min(i, j, thread_id, global_i, global_j, exclude, min_pair);
-                            // if (global_i<=3) printf("L %d %d %f %f %d \n", global_i, global_j, row[j], old_row, left_upperbound-1);    
+                            assert(row[j] == dotProduct(std::span(&data[global_i], window_size), std::span(&data[global_j], window_size)));
+                            if (global_i<=3) printf("L %d %d %f %f %d \n", global_i, global_j, row[j], old_row, thread_id);    
                         }
-                        row[0] = row0[global_i];
-                        update_min(i, 0, thread_id, global_i, 0, exclude, min_pair);
-                        // if (global_i<=3)  printf("L %d %d %f\n", global_i, 0, row[0]);    
+                        if (left_upperbound > 0){
+                            row[0] = first_row[global_i];
+                            update_min(i, 0, thread_id, global_i, 0, exclude, min_pair);
+                                assert(row[0] == dotProduct(std::span(&data[global_i], window_size), std::span(&data[0], window_size)));
+                            if (global_i<=3)  printf("L %d %d %f %d\n", global_i, 0, row[0], thread_id);    
+                        }
                     } else if (block_height == 1) {
-                        row[0] = row0[global_i];
+                        row[0] = first_row[global_i];
                         update_min(i, 0, thread_id, global_i, 0, exclude, min_pair);
-                    }
-                    
-                }
-                else {
+                    }   
+                } else {
                     // Default block
-                    for (int j = 0; j < block_width; ++j) {
-                        row[j] =  update_row(i, j, global_i, block_column_start);
-                        update_min(i, j, thread_id, global_i, block_column_start + i + j, exclude, min_pair);
-                        if (global_i<=3) {
-                            // printf("%d %d %f\n", global_i, block_column_start + j+i, row[j]);
+                    if (i == 0 and block_column_start == 0) {
+                        for (int j = block_width-1; j >=0; --j) {
+                            if (j == 0){
+                                row[j] = first_row[global_i];
+                            } else {
+                                const int global_j = block_column_start + i + j;
+                                auto old_row = row[j];
+                                row[j] = update_row(global_i, global_j, j-1);
+                                update_min(i, j, thread_id, global_i, block_column_start + i + j, exclude, min_pair);
+                                if (global_i<=3) printf("+ %d %d %f %d\n", global_i, block_column_start + j+i, row[j], thread_id);
+                                if  (row[j] != dotProduct(std::span(&data[global_i], window_size), std::span(&data[global_j], window_size))){
+                                    printf("+ Error in full block %d %d of width %d in line %d starting at %d \n", global_i, global_j, block_width, i, block_column_start);
+                                    printf("Expected %f, got %f\n", dotProduct(std::span(&data[global_i], window_size), std::span(&data[global_j], window_size)), row[j]);
+                                    printf("With old %f instead of %f\n", old_row, dotProduct(std::span(&data[global_i-1], window_size), std::span(&data[global_j-1], window_size)));
+                                    throw std::runtime_error("Error in full block\n");
+                                }
+                            }
+                        }
+                    } else {
+                        for (int j = 0; j < block_width; ++j) {
+                            const int global_j = block_column_start + i + j;
+                            auto old_row = row[j];
+
+                            row[j] =  update_row(global_i, global_j, j);
+                            update_min(i, j, thread_id, global_i, block_column_start + i + j, exclude, min_pair);
+                            if (global_i<=3) printf("- %d %d %f %d\n", global_i, block_column_start + j+i, row[j], thread_id);
+
+
+                            if (row[j] != dotProduct(std::span(&data[global_i], window_size), std::span(&data[global_j], window_size))){
+                                printf("- Error in full block %d %d of width %d in line %d starting at %d by thread %d \n", global_i, global_j, block_width, i, block_column_start, thread_id);
+                                printf("Expected %f, got %f\n", dotProduct(std::span(&data[global_i], window_size), std::span(&data[global_j], window_size)), row[j]);
+                                printf("With old %f instead of %f\n", old_row, dotProduct(std::span(&data[global_i-1], window_size), std::span(&data[global_j-1], window_size)));
+                                throw std::runtime_error("Error in full block\n");
+                            }
                         }
                     }
                 }
-                block_min_value_per_row[thread_id][i] = min_pair.first;
-                block_min_indice_per_row[thread_id][i] = min_pair.second;
-                #pragma omp barrier
+            
+            block_min_pair_per_row[thread_id][i] = min_pair;
+            #pragma omp barrier
             }
             #pragma omp barrier
             // Compute global minimum per row
             if (thread_id < block_row_end) {
-                auto min = matrix_profile[meta_row_id*block_height + thread_id];
-                int ind = 0;
-                for (int k = 0; k < block_row_end; ++k) {
-                    if (block_min_value_per_row[k][thread_id] < min) {
-                        min = block_min_value_per_row[k][thread_id];
-                        ind = block_min_indice_per_row[k][thread_id];
+                auto min = std::numeric_limits<T>::max();
+                int ind = -1;
+                for (int k = 0; k < threads_num; ++k) {
+                    auto min_pair = block_min_pair_per_row[k][thread_id].first;
+                    if (min_pair < min) {
+                        min = min_pair;
+                        ind = block_min_pair_per_row[k][thread_id].second;
                     }
-                    block_min_value_per_row[k][thread_id] = std::numeric_limits<T>::max();
                 }
-                matrix_profile[meta_row_id*block_height + thread_id] = std::sqrt(std::abs(min)); // abs to fix min=-0,0000 // CACHE INVALIDATION
+                matrix_profile[meta_row_id*block_height + thread_id] = std::sqrt(std::abs(min)); // abs to fix min=-0,0000  
                 profile_index[meta_row_id*block_height + thread_id] = ind; 
-                printf("min %d %d %f\n", meta_row_id*block_height + thread_id, profile_index[meta_row_id*block_height + thread_id], matrix_profile[meta_row_id*block_height + thread_id]*matrix_profile[meta_row_id*block_height + thread_id]);
-
-                             // CACHE INVALIDATION
+                // printf("min %d %d %f\n", meta_row_id*block_height + thread_id, profile_index[meta_row_id*block_height + thread_id], matrix_profile[meta_row_id*block_height + thread_id]*matrix_profile[meta_row_id*block_height + thread_id]);
             }
             #pragma omp barrier
         }
