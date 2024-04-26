@@ -4,8 +4,8 @@ import numpy as np
 
 
 n = 50
-width  = 3
-height = 20
+width  = 15
+height = 5
 
 
 
@@ -25,9 +25,9 @@ if n % width > 0:
 missing = int(np.ceil((n  - (nb_block - int(np.ceil(height / width)) )*width)/width))
 
 for row in range(metarows):
+
     block_shift = (row+1) * height
     diagonal_shift = int(np.ceil(block_shift / width))
-    print(missing)
     for block in range(nb_block+missing):
         x1 = -diagonal_shift * width + row*height + block * width
         x2 = x1 + width
@@ -58,7 +58,7 @@ for row in range(metarows):
             yt = [yt1, yt2, yt3]
             ax.add_patch(patches.Polygon(xy=list(zip(xt,yt)), fill=True))
         # Right Triangle
-        if x1 < n and x1 >= n-width and x3>=n:
+        elif x1 < n and x1 >= n-width and x3>=n:
             xt1 = x1
             xt2 = n 
             xt3 = n
@@ -86,7 +86,7 @@ for row in range(metarows):
             yp = [yp1, yp2, yp3, yp4]
             ax.add_patch(patches.Polygon(xy=list(zip(xp,yp)), fill=True, color='green'))
         # Polygon
-        if x1 < 0 and x4 > height and x4 >= width:
+        elif x1 < 0 and x4 > height and x4 >= width:
             xp1 = 0
             xp2 = x2
             xp3 = x4
@@ -102,6 +102,16 @@ for row in range(metarows):
             xp = [xp1, xp2, xp3, xp4, xp5]
             yp = [yp1, yp2, yp3, yp4, yp5]
             ax.add_patch(patches.Polygon(xy=list(zip(xp,yp)), fill=True, color='orange'))
+
+        # left trunct
+        # elif x1 < 0 and x2 <= 0:
+        #     shift = (diagonal_shift-block)*width
+        #     xlt = [0, 0, x4, x3]
+        #     ylt = [shift, shift-width, y4, y3]
+
+        #     ax.add_patch(patches.Polygon(xy=list(zip(xlt,ylt)), fill=True, color='purple'))
+
+        ax.add_patch(patches.Polygon(xy=list(zip(x,y)), fill=False))
 
 plt.plot([0, n, n, 0, 0], [0, 0, n, n, 0], 'k-', color='red')
 plt.axis('equal')
