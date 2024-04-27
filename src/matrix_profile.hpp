@@ -10,7 +10,7 @@
 #include <tuple>
 #include <omp.h>    
 #include "distance.hpp"
-
+#include "block.hpp"
 /**
  * @brief Computes the matrix profile of a given time series data using the brute force procedure.
  * 
