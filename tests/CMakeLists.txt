@@ -13,13 +13,14 @@ include_directories(${CMAKE_SOURCE_DIR}/src/)
 enable_testing()
 
 add_executable(
-    test_block
+    tests
     test_block.cpp
+    test_mp.cpp
 )
 target_link_libraries(
-    test_block
+    tests
     GTest::gtest_main
 )
 
 include(GoogleTest)
-gtest_discover_tests(test_block)
+gtest_discover_tests(tests)

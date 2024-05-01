@@ -222,36 +222,47 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
     std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;  
   
 
+    // start_time = std::chrono::high_resolution_clock::now();
+    // mpOutput = computeMatrixProfileSTOMP(data, window_size);
+    // std::vector<double> matrix_profile_stompv2 = std::get<0>(mpOutput);
+    // end_time = std::chrono::high_resolution_clock::now();
+    // duration = end_time - start_time;
+    // std::cout << "Matrix profile computed for vector of size " << vector_size << " with window size " << window_size << std::endl;
+    // std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
+
+    std::cout << "BlockSTOMP" << std::endl;
+    // Measure computation time
     start_time = std::chrono::high_resolution_clock::now();
-    mpOutput = computeMatrixProfileSTOMPV2(data, window_size);
-    std::vector<double> matrix_profile_stompv2 = std::get<0>(mpOutput);
+    mpOutput = blockSTOMP(data, window_size, 100, 100);
+    std::vector<double> matrix_profile_blockstomp = std::get<0>(mpOutput);
     end_time = std::chrono::high_resolution_clock::now();
+    // Compute duration
     duration = end_time - start_time;
     std::cout << "Matrix profile computed for vector of size " << vector_size << " with window size " << window_size << std::endl;
     std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
 
 
-    double difference_norm = compute_vector_difference_norm(matrix_profile, matrix_profile_stomp);
-    std::cout << "Norm of the difference: " << difference_norm << std::endl;
+  //   double difference_norm = compute_vector_difference_norm(matrix_profile, matrix_profile_stomp);
+  //   std::cout << "Norm of the difference: " << difference_norm << std::endl;
   
-    difference_norm = compute_vector_difference_norm(matrix_profile, matrix_profile_stompv2);
-    std::cout << "Norm of the difference: " << difference_norm << std::endl;
+  //   difference_norm = compute_vector_difference_norm(matrix_profile, matrix_profile_stompv2);
+  //   std::cout << "Norm of the difference: " << difference_norm << std::endl;
 
-    std::vector<double>::iterator result;
-    result = std::max_element(matrix_profile.begin(), matrix_profile.end());
-    std::cout << " max " << *result << '\n';
-    result = std::max_element(matrix_profile_stomp.begin(), matrix_profile_stomp.end());
-    std::cout << " max " << *result << '\n';
+  //   std::vector<double>::iterator result;
+  //   result = std::max_element(matrix_profile.begin(), matrix_profile.end());
+  //   std::cout << " max " << *result << '\n';
+  //   result = std::max_element(matrix_profile_stomp.begin(), matrix_profile_stomp.end());
+  //   std::cout << " max " << *result << '\n';
 
-    result = std::min_element(matrix_profile.begin(), matrix_profile.end());
-    std::cout << " min " << *result << '\n';
-    result = std::min_element(matrix_profile_stomp.begin(), matrix_profile_stomp.end());
-    std::cout << " min " << *result << '\n';
+  //   result = std::min_element(matrix_profile.begin(), matrix_profile.end());
+  //   std::cout << " min " << *result << '\n';
+  //   result = std::min_element(matrix_profile_stomp.begin(), matrix_profile_stomp.end());
+  //   std::cout << " min " << *result << '\n';
   
-    result = std::max_element(matrix_profile_stompv2.begin(), matrix_profile_stompv2.end());
-    std::cout << " max " << *result << '\n';
-    result = std::min_element(matrix_profile_stompv2.begin(), matrix_profile_stompv2.end());
-    std::cout << " min " << *result << '\n';
+  //   result = std::max_element(matrix_profile_stompv2.begin(), matrix_profile_stompv2.end());
+  //   std::cout << " max " << *result << '\n';
+  //   result = std::min_element(matrix_profile_stompv2.begin(), matrix_profile_stompv2.end());
+  //   std::cout << " min " << *result << '\n';
   }
 
 void test_stompv2(int vector_size, int window_size) {
@@ -285,8 +296,8 @@ int main() {
   // testDistance();
   //  compareStumpy();
 
-  // testMatrixProfileComputationSpeed(100000, 7);
-  test_stompv2(10, 1);
+  testMatrixProfileComputationSpeed(30000, 7);
+  // test_stompv2(1000, 1);
 
   return 0;
 }
