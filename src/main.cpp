@@ -233,7 +233,7 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
     std::cout << "BlockSTOMP" << std::endl;
     // Measure computation time
     start_time = std::chrono::high_resolution_clock::now();
-    mpOutput = blockSTOMP(data, window_size, 100, 100);
+    mpOutput = blockSTOMP(data, window_size, 100, 1000);
     std::vector<double> matrix_profile_blockstomp = std::get<0>(mpOutput);
     end_time = std::chrono::high_resolution_clock::now();
     // Compute duration

@@ -372,10 +372,6 @@ TEST_F(BlockTest, QuandrangleWithInitialize)
             initial_row[j+1] = dotProduct(std::span(&time_series[block_i-1], m), std::span(&time_series[block_j+j], m));
         }
     }
-    for (int j = 0; j < block_width; ++j)
-    {
-        printf("%f ", initial_row[j]);
-    }
     // Initialize a Block object
     block<double> block(n-m+1, m, exclude, block_i, block_j, block_ID, block_width, block_height, first_row, initial_row, time_series);
 
