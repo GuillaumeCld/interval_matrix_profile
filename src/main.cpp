@@ -56,11 +56,6 @@ void compareStumpy(){
   std::vector<double> matrix_profile_stomp = std::get<0>(mpOutput);
   std::vector<int> index_profile_stomp = std::get<1>(mpOutput);
 
-  printf("STOMV2P\n");
-  mpOutput = computeMatrixProfileSTOMPV2(ts, window_size);
-  std::vector<double> matrix_profile_stompv2 = std::get<0>(mpOutput);
-  std::vector<int> index_profile_stompv2 = std::get<1>(mpOutput);
-
 
   double difference_norm = compute_vector_difference_norm(mp_ref, matrix_profile_stomp);
   std::cout << "Norm of the difference with STOMP: " << difference_norm << std::endl;
@@ -77,13 +72,6 @@ void compareStumpy(){
     std::cout << "failure" << std::endl;
   }
     
-  difference_norm = compute_vector_difference_norm(matrix_profile_stomp, matrix_profile_stompv2);
-  std::cout << "Norm of the difference with STOMPV2: " << difference_norm << std::endl;
-  if(std::equal(matrix_profile_stomp.begin(), matrix_profile_stomp.end(), matrix_profile_stompv2.begin())) {
-    std::cout << " success" << std::endl;
-  } else {
-    std::cout << "failure" << std::endl;
-  }
 
   
   std::vector<double>::iterator max;
@@ -101,9 +89,6 @@ void compareStumpy(){
   min = std::min_element(matrix_profile_brute_force.begin(), matrix_profile_brute_force.end());
   std::cout << "BruteForce: max " << *max << ", min " << *min << '\n';
 
-  max = std::max_element(matrix_profile_stompv2.begin(), matrix_profile_stompv2.end());
-  min = std::min_element(matrix_profile_stompv2.begin(), matrix_profile_stompv2.end());
-  std::cout << "STOMPV2: max " << *max << ", min " << *min << '\n';
 
   max = std::max_element(ts.begin(), ts.end()); 
   min = std::min_element(ts.begin(), ts.end());
@@ -150,26 +135,6 @@ void compareStumpy(){
           outputFile3 << value << "\n";
       }
       outputFile3.close();
-        std::cout << "Matrix profile has been written to matrix_profile.txt\n";
-    } else {
-        std::cerr << "Unable to open file for writing.\n";
-    }
-    std::ofstream outputFile4("../Data/matrix_profile_stompv2.txt");
-    if (outputFile4.is_open()) {
-      for (const auto& value : matrix_profile_stompv2) {
-          outputFile4 << value << "\n";
-      }
-      outputFile4.close();
-        std::cout << "Matrix profile has been written to matrix_profile.txt\n";
-    } else {
-        std::cerr << "Unable to open file for writing.\n";
-    }
-    std::ofstream outputFile5("../Data/index_profile_stompv2.txt");
-    if (outputFile5.is_open()) {
-      for (const auto& value : index_profile_stompv2) {
-          outputFile5 << value << "\n";
-      }
-      outputFile5.close();
         std::cout << "Matrix profile has been written to matrix_profile.txt\n";
     } else {
         std::cerr << "Unable to open file for writing.\n";
@@ -265,32 +230,6 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
   //   std::cout << " min " << *result << '\n';
   }
 
-void test_stompv2(int vector_size, int window_size) {
-    // Generate random vector
-
-    std::vector<double> data;
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(0.0, 1.0); // Random numbers between 0 and 1
-
-    std::cout << "Random gen" << std::endl;
-
-    for (int i = 0; i < vector_size; ++i) {
-        data.push_back(dis(gen));
-    }
-
-    std::cout << "STOMP" << std::endl;
-    auto mpOutput = computeMatrixProfileSTOMPV2(data, window_size);
-    std::vector<double> matrix_profile_stompv2 = std::get<0>(mpOutput);
-
-    printf("Brute force\n");
-    mpOutput = computeMatrixProfileBruteForce(data, window_size);
-    std::vector<double> matrix_profile_stompbf = std::get<0>(mpOutput);
-
-
-      double difference_norm = compute_vector_difference_norm(matrix_profile_stompbf, matrix_profile_stompv2);
-    std::cout << "Norm of the difference: " << difference_norm << std::endl;
-} 
 
 int main() {
   // testDistance();

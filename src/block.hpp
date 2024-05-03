@@ -29,10 +29,8 @@ min_pair<T> min_pair_min2(min_pair<T> a, min_pair<T> b) {
     return a.value < b.value ? a : b;
 }
 
-// template <typename T>
 #pragma omp declare reduction(min_pair_min: min_pair<double>: \
-    omp_out=min_pair_min2(omp_out, omp_in)) \
-    initializer(omp_priv={0, std::numeric_limits<double>::max()})
+    omp_out=min_pair_min2(omp_out, omp_in))
 
 
 /**
@@ -223,7 +221,7 @@ private:
      */
     inline void update_row(int j, int global_i, int global_j)
     {
-        auto old = this->row[j];
+        // auto old = this->row[j];
 
         // Compute the elements to remove (prev) and the elements to add (next)
         auto prev_data = this->time_series[global_i - 1] - this->time_series[global_j - 1];
