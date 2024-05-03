@@ -4,8 +4,8 @@ import numpy as np
 
 
 n = 100
-width  = 50
-height = 30
+width  = 10
+height = 60
 
 
 

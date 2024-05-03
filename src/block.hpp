@@ -23,6 +23,18 @@ struct min_pair
     T value;
 };
 
+
+template <typename T>
+min_pair<T> min_pair_min2(min_pair<T> a, min_pair<T> b) {
+    return a.value < b.value ? a : b;
+}
+
+// template <typename T>
+#pragma omp declare reduction(min_pair_min: min_pair<double>: \
+    omp_out=min_pair_min2(omp_out, omp_in)) \
+    initializer(omp_priv={0, std::numeric_limits<double>::max()})
+
+
 /**
  * @file block.hpp
  */
@@ -116,7 +128,7 @@ public:
             STOMP_method = &block<T>::STOMP_parallelogram;
             _type = PARALLELOGRAM;
         }
-    }
+            }
     /**
      * @brief Destructor
      */
@@ -340,16 +352,6 @@ private:
     void STOMP_triangle()
     {
         int first_line = -(_global_j + _width) + 1;
-        // if (first_line >=_height)
-        // {
-        //     for (int i = 0; i < _height; ++i)
-        //     {
-        //         min_pair<T> min = {-1, std::numeric_limits<T>::max()};
-        //         this->local_min_row[i] = min;
-        //     }
-        // }
-        // else
-        // {
         for (int i = 0; i < first_line; ++i)
         {
             min_pair<T> min = {-1, std::numeric_limits<T>::max()};
@@ -368,7 +370,6 @@ private:
             compute_row(current_start + 1, _width, i, min);
             elem_per_row++;
         }
-        // }
     }
 
     /**

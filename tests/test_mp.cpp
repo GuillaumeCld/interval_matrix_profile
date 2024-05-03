@@ -104,6 +104,7 @@ TEST_F(MpTest, Block_v2)
     {
         for (int block_height = 10; block_height <= 90; block_height += 10)
         {
+            printf("Block STOMP with width: %d, height: %d\n", block_width, block_height);
             // std::cout << "Block STOMP with width: " << block_width << ", height: " << block_height << std::endl;
             auto BlockMpOutput = blockSTOMP_v2(data, window_size, block_width, block_height);
             std::vector<double> matrix_profile_stomp_block = std::get<0>(BlockMpOutput);
@@ -113,5 +114,12 @@ TEST_F(MpTest, Block_v2)
                 EXPECT_NEAR(matrix_profile_stomp_bf[i], matrix_profile_stomp_block[i], 1e-10) << "Incorrect mp value at index " << i << " height" << block_height << " and  width" << block_width;
             }
         }
+    }
+    auto BlockMpOutput = blockSTOMP_v2(data, window_size, 10, 60);
+    std::vector<double> matrix_profile_stomp_block = std::get<0>(BlockMpOutput);
+    std::vector<int> matrix_profile_index_block = std::get<1>(BlockMpOutput);
+    for (int i = 0; i < matrix_profile_stomp_bf.size(); ++i)
+    {
+        EXPECT_NEAR(matrix_profile_stomp_bf[i], matrix_profile_stomp_block[i], 1e-10) << "Incorrect mp value at index " << i;
     }
 }
