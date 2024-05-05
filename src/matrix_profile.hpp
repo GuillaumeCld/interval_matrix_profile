@@ -448,81 +448,88 @@ auto blockSTOMP_v3(std::vector<T> &time_series, int window_size, const int block
     std::vector<block<double>> previous_blocks(n_total_blocks + 2);
     // Loop to build the blocks
     int previous_diagonal_shift = (block_height % block_width > 0) ? block_height / block_width + 1 : block_height / block_width;
-#pragma omp parallel shared(first_row, time_series, current_blocks, block_min_pair_per_row, n_sequence, window_size, first_block_height, block_width, previous_blocks, previous_diagonal_shift)
-#pragma omp single
+    min_pair<T> minimum = {-1, std::numeric_limits<T>::max()};
+    #pragma omp parallel shared(first_row, time_series, current_blocks, block_min_pair_per_row, \
+            n_sequence, window_size, first_block_height, block_width, previous_blocks, previous_diagonal_shift, minimum)
     {
         for (int metarow = 0; metarow < nb_metarows; ++metarow)
         {
             const int block_shift = (metarow + 1) * block_height;
             const int diagonal_shift = (block_shift % block_width > 0) ? block_shift / block_width + 1 : block_shift / block_width;
-
-            const int row_length = -diagonal_shift * block_width + n_total_blocks * block_width + metarow * block_height;
-            n_total_blocks = (row_length < n_sequence) ? n_total_blocks + 1 : first_n_blocks;
-            block_height = (metarow == nb_metarows - 1) ? n_sequence - metarow * first_block_height : first_block_height;
-            for (int block_id = n_total_blocks - 1; block_id >= 0; --block_id)
+            #pragma omp single
             {
-#pragma omp task default(none)                                                                                                                        \
-    shared(first_row, time_series, current_blocks, block_min_pair_per_row, n_sequence, window_size, first_block_height, block_width, previous_blocks) \
-    firstprivate(metarow, block_id, block_shift, diagonal_shift, previous_diagonal_shift, row_length, n_total_blocks, block_height)                   \
-    untied
+                const int row_length = -diagonal_shift * block_width + n_total_blocks * block_width + metarow * block_height;
+                n_total_blocks = (row_length < n_sequence) ? n_total_blocks + 1 : first_n_blocks;
+                block_height = (metarow == nb_metarows - 1) ? n_sequence - metarow * first_block_height : first_block_height;
+                for (int block_id = n_total_blocks - 1; block_id >= 0; --block_id)
                 {
-                    int previous_block_id = std::max(0, block_id - (diagonal_shift - previous_diagonal_shift));
-                    int block_j = -diagonal_shift * block_width + metarow * first_block_height + block_id * block_width;
-                    int block_i = metarow * first_block_height;
-                    std::vector<double> initial_row(block_width, 0.0);
+                    #pragma omp task default(none) \
+                    shared(first_row, time_series, current_blocks, block_min_pair_per_row, n_sequence, window_size, first_block_height, block_width, previous_blocks) \
+                    firstprivate(metarow, block_id, block_shift, diagonal_shift, previous_diagonal_shift, row_length, n_total_blocks, block_height)                   \
+                    untied
+                    {
+                        int previous_block_id = std::max(0, block_id - (diagonal_shift - previous_diagonal_shift));
+                        int block_j = -diagonal_shift * block_width + metarow * first_block_height + block_id * block_width;
+                        int block_i = metarow * first_block_height;
+                        std::vector<double> initial_row(block_width, 0.0);
 
-                    // Retrieve the initial row for the block's recurrence
-                    if (metarow == 0)
-                    {
-                        for (int j = 0; j < block_width; ++j)
+                        // Retrieve the initial row for the block's recurrence
+                        if (metarow == 0)
                         {
-                            initial_row[j] = first_row[block_j + j];
+                            for (int j = 0; j < block_width; ++j)
+                            {
+                                initial_row[j] = first_row[block_j + j];
+                            }
                         }
+                        else
+                        {
+                            initial_row = previous_blocks[previous_block_id].get_row();
+                        }
+                        // Initialize the block
+                        block<double> block(n_sequence,
+                                            window_size,
+                                            exclude,
+                                            block_i,
+                                            block_j,
+                                            block_id,
+                                            block_width,
+                                            block_height,
+                                            first_row,
+                                            initial_row,
+                                            time_series);
+                            
+                        current_blocks[block_id] = std::move(block);
+                        current_blocks[block_id].STOMP();
+                        // retrieve the minimums per row
+                        block_min_pair_per_row[block_id] = current_blocks[block_id].get_local_min_rows();
                     }
-                    else
-                    {
-                        initial_row = previous_blocks[previous_block_id].get_row();
-                    }
-                    // Initialize the block
-                    block<double> block(n_sequence,
-                                        window_size,
-                                        exclude,
-                                        block_i,
-                                        block_j,
-                                        block_id,
-                                        block_width,
-                                        block_height,
-                                        first_row,
-                                        initial_row,
-                                        time_series);
-                    current_blocks[block_id] = std::move(block);
-                    current_blocks[block_id].STOMP();
-                    // retrieve the minimums per row
-                    block_min_pair_per_row[block_id] = current_blocks[block_id].get_local_min_rows();
                 }
+                #pragma omp taskwait
             }
-#pragma omp taskwait
             // Compute the global minimums per row
             for (int i = 0; i < block_height; ++i)
             {
-                auto min = std::numeric_limits<T>::max();
-                int ind = -1;
-
+                // minimum = {-1, std::numeric_limits<T>::max()};
+                #pragma omp for reduction(min_pair_min:minimum) 
                 for (int k = 0; k < n_total_blocks; ++k)
                 {
-                    auto min_pair = block_min_pair_per_row[k][i];
-                    if (min_pair.value < min)
-                    {
-                        min = min_pair.value;
-                        ind = min_pair.index;
-                    }
+                    auto &min_pair = block_min_pair_per_row[k][i];
+                    minimum = min_pair_min2(minimum, min_pair);
                 }
+                #pragma omp masked
+                {
+                    matrix_profile[metarow * first_block_height + i] = std::sqrt(std::abs(minimum.value));
+                    profile_index[metarow * first_block_height + i] = minimum.index;
+                    minimum = {-1, std::numeric_limits<T>::max()};
 
-                matrix_profile[metarow * first_block_height + i] = std::sqrt(std::abs(min));
-                profile_index[metarow * first_block_height + i] = ind;
+                }
+                #pragma omp barrier
             }
-            previous_diagonal_shift = diagonal_shift;
-            previous_blocks = current_blocks;
+            #pragma omp single
+            {
+                previous_diagonal_shift = diagonal_shift;
+                previous_blocks = current_blocks;
+            }
         }
     }
     return std::make_tuple(matrix_profile, profile_index);

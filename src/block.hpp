@@ -5,6 +5,7 @@
 #include <limits>
 #include <functional>
 #include <distance.hpp>
+#include <cfloat>
 
 enum block_type
 {
@@ -25,12 +26,12 @@ struct min_pair
 
 
 template <typename T>
-min_pair<T> min_pair_min2(min_pair<T> a, min_pair<T> b) {
+min_pair<T> min_pair_min2(min_pair<T>const & a, min_pair<T>  const & b) {
     return a.value < b.value ? a : b;
 }
 
-#pragma omp declare reduction(min_pair_min: min_pair<double>: \
-    omp_out=min_pair_min2(omp_out, omp_in))
+#pragma omp declare reduction(min_pair_min: min_pair<double>: omp_out=min_pair_min2(omp_out, omp_in))  \
+    initializer(omp_priv = {-1, 1.0})
 
 
 /**
