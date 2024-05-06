@@ -155,16 +155,16 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
     for (int i = 0; i < vector_size; ++i) {
         data.push_back(dis(gen));
     }
-    // std::cout << "Brute Force" << std::endl;
+    std::cout << "Brute Force" << std::endl;
 
-    // // Measure computation time
-    // auto start_time = std::chrono::high_resolution_clock::now();
+    // Measure computation time
+    auto start_time = std::chrono::high_resolution_clock::now();
     // auto mpOutput = computeMatrixProfileBruteForce(data, window_size);
     // std::vector<double> matrix_profile = std::get<0>(mpOutput);
-    // auto end_time = std::chrono::high_resolution_clock::now();
+    auto end_time = std::chrono::high_resolution_clock::now();
     
     // // Compute duration
-    // std::chrono::duration<double> duration = end_time - start_time;
+    std::chrono::duration<double> duration = end_time - start_time;
 
     // // Output results
     // std::cout << "Matrix profile computed for vector of size " << vector_size << " with window size " << window_size << std::endl;
@@ -197,24 +197,24 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
 
     std::cout << "BlockSTOMP" << std::endl;
     // Measure computation time
-    auto start_time = std::chrono::high_resolution_clock::now();
-    auto mpOutput = blockSTOMP_v2(data, window_size, 100, 100);
-    std::vector<double> matrix_profile_blockstomp = std::get<0>(mpOutput);
-    auto end_time = std::chrono::high_resolution_clock::now();
-    // Compute duration
-    auto duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-    std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
-
-
-    std::cout << "BlockSTOMP v3" << std::endl;
-    // Measure computation time
     start_time = std::chrono::high_resolution_clock::now();
-    mpOutput = blockSTOMP_v3(data, window_size, 100, 100);
-    matrix_profile_blockstomp = std::get<0>(mpOutput);
+    auto mpOutput = blockSTOMP_v2(data, window_size, 10, 10);
+    std::vector<double> matrix_profile_blockstomp = std::get<0>(mpOutput);
     end_time = std::chrono::high_resolution_clock::now();
     // Compute duration
     duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
     std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
+
+
+    // std::cout << "BlockSTOMP v3" << std::endl;
+    // // Measure computation time
+    // start_time = std::chrono::high_resolution_clock::now();
+    // mpOutput = blockSTOMP_v3(data, window_size, 5000, 10000);
+    // matrix_profile_blockstomp = std::get<0>(mpOutput);
+    // end_time = std::chrono::high_resolution_clock::now();
+    // // Compute duration
+    // duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    // std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
 
 
   //   double difference_norm = compute_vector_difference_norm(matrix_profile, matrix_profile_stomp);
@@ -245,7 +245,7 @@ int main() {
   // testDistance();
   //  compareStumpy();
 
-  testMatrixProfileComputationSpeed(50000, 10);
+  testMatrixProfileComputationSpeed(1000, 64);
   // test_stompv2(1000, 1);
 
   return 0;

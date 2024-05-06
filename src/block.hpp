@@ -56,9 +56,9 @@ public:
           int ID,
           int width,
           int height,
-          std::vector<T> &in_first_row,
-          std::vector<T> &in_initial_row,
-          std::vector<T> &in_time_series)
+          std::vector<T>const &in_first_row,
+          std::vector<T>const &in_initial_row,
+          std::vector<T>const &in_time_series)
         : _n(n),
           _m(m),
           _exclude(exclude),
@@ -222,23 +222,11 @@ private:
      */
     inline void update_row(int j, int global_i, int global_j)
     {
-        // auto old = this->row[j];
-
         // Compute the elements to remove (prev) and the elements to add (next)
         auto prev_data = this->time_series[global_i - 1] - this->time_series[global_j - 1];
         auto next_data = this->time_series[global_i + _m - 1] - this->time_series[global_j + _m - 1];
         // Update the row following the recurrence
         this->row[j] += (next_data * next_data - prev_data * prev_data);
-
-        // auto distance = dotProduct(std::span(&this->time_series[global_i], _m), std::span(&this->time_series[global_j], _m));
-        // auto exp_old = dotProduct(std::span(&this->time_series[global_i - 1], _m), std::span(&this->time_series[global_j - 1], _m));
-        // if ( global_i < 20 ) printf(" STOMP row[%d] = %f with %f - %f + %f (%d,%d) expected %f and old %f block type %d\n", j, this->row[j], old, prev_data * prev_data, next_data * next_data, global_i, global_j, distance, exp_old, _type);
-        // if (std::abs(this->row[j] - distance) > 1e-14)
-        // {
-        //     printf(" STOMP row[%d] = %f with %f - %f + %f (%d,%d) expected %f and old %f block type %d and height %d with _global_i %d\n", j, this->row[j], old, prev_data * prev_data, next_data * next_data, global_i, global_j, distance, exp_old, _type, _height, _global_i);
-        //     print(std::cout);
-        //     exit(1);
-        // }
     }
 
     /**
@@ -270,12 +258,6 @@ private:
         {
             this->row[j] = this->first_row[_global_j + j];
             update_min(j, min, _global_i, _global_j + j);
-
-            // auto distance = dotProduct(std::span(&this->time_series[_global_i], _m), std::span(&this->time_series[_global_j + j], _m));
-            // if (std::abs(this->row[j] - distance) > 1e-14)
-            // {
-            //     printf("FSTOMP row[%d] = %f with %f (%d,%d) expected %f block type %d\n", j, this->row[j], this->first_row[_global_j + j], _global_i, _global_j + j, distance, _type);
-            // }
         }
         this->local_min_row[0] = min;
     }
@@ -298,14 +280,6 @@ private:
             // Update the row following the recurrence
             this->row[j] = this->initial_row[j] + (next_data * next_data - prev_data * prev_data);
             update_min(j, min, _global_i, global_j);
-
-            // auto distance = dotProduct(std::span(&this->time_series[_global_i], _m), std::span(&this->time_series[global_j], _m));
-            // auto exp_old = dotProduct(std::span(&this->time_series[_global_i - 1], _m), std::span(&this->time_series[global_j - 1], _m));
-            // if ( _global_i < 20 ) printf("ISTOMP row[%d] = %f with %f - %f + %f (%d,%d) expected %f and old %f block type %d\n", j, this->row[j], this->initial_row[j], prev_data * prev_data, next_data * next_data, _global_i, global_j, distance, exp_old, _type);
-            // if (std::abs(this->row[j] - distance) > 1e-14)
-            // {
-            //     printf("ISTOMP row[%d] = %f with %f - %f + %f (%d,%d) expected %f block type %d\n", j, this->row[j], this->initial_row[j], prev_data * prev_data, next_data * next_data, _global_i, global_j, distance, _type);
-            // }
         }
         this->local_min_row[0] = min;
     }
@@ -317,15 +291,15 @@ private:
     {
         min_pair<T> min = {-1, std::numeric_limits<T>::max()};
         // Initialize the first row
-        if (_global_i == 0)
+        if (_global_i == 0) 
         {
             // Case first row of the distance matrix
             initialize_with_first_row(0, _width, min);
         }
-        else
+        else 
         {
             // Case initialize with the given initial row
-            if (_global_j == 0)
+            if (_global_j == 0) 
             {
                 // Case first column of the distance matrix
                 this->row[0] = this->first_row[_global_i];
@@ -333,7 +307,7 @@ private:
                 min.index = _global_j;
                 initialize_with_initial_row(1, _width, min);
             }
-            else
+            else 
             {
                 initialize_with_initial_row(0, _width, min);
             }
@@ -389,15 +363,10 @@ private:
         for (int j = 1; j < nb_right_elements; ++j)
         {
             global_j = _global_j + j + nb_left_elements;
-            // printf(" global_j %d j %d left %d\n", global_j, j, nb_left_elements);
             auto prev_data = this->time_series[global_j - 1] - this->time_series[_global_i - 1];
             auto next_data = this->time_series[global_j + _m - 1] - this->time_series[_global_i + _m - 1];
             this->row[nb_left_elements + j] = this->initial_row[nb_left_elements + j] + (next_data * next_data - prev_data * prev_data);
             update_min(nb_left_elements + j, min, _global_i, global_j);
-
-            // auto distance = dotProduct(std::span(&this->time_series[_global_i], _m), std::span(&this->time_series[j], _m));
-            // auto exp_old = dotProduct(std::span(&this->time_series[_global_i - 1], _m), std::span(&this->time_series[j - 1], _m));
-            // printf("STOMP row[%d] = %f with %f - %f + %f (%d,%d) expected %f and old %f block type %d\n", j, this->row[nb_left_elements + j], this->initial_row[nb_left_elements + j], prev_data * prev_data, next_data * next_data, _global_i, global_j, distance, exp_old, _type);
         }
         this->local_min_row[0] = min;
         // printf("Min value %f at index %d\n", std::abs(min.value), min.index);
@@ -449,7 +418,7 @@ private:
             update_min(current_start, min, _global_i + i, 0);
             // Compute the rest of the row
             compute_row(current_start + 1, _width, i, min);
-            elem_per_row++;
+            ++elem_per_row;
         }
         // Parallelogram part
         for (int i = first_line + _width; i < _height; ++i)
@@ -464,10 +433,8 @@ private:
      */
     inline void STOMP_quadrangle_with_initial_recurrence()
     {
-        // print(std::cout);
         int elem_per_row = _width + _global_j;
         int current_start = _width - elem_per_row;
-        // printf("Current start %d\n", current_start);
         min_pair<T> min = {-1, std::numeric_limits<T>::max()};
         // Initialize the first row
         this->row[current_start] = this->first_row[_global_i];
@@ -481,15 +448,11 @@ private:
             auto next_data = this->time_series[_global_j + j + _m - 1] - this->time_series[_global_i + _m - 1];
             // Update the row following the recurrence
             this->row[j] = this->initial_row[j] + (next_data * next_data - prev_data * prev_data);
-            // auto distance = dotProduct(std::span(&this->time_series[_global_i], _m), std::span(&this->time_series[global_j], _m));
-            // auto exp_old = dotProduct(std::span(&this->time_series[_global_i - 1], _m), std::span(&this->time_series[global_j - 1], _m));
-            // printf("STOMP row[%d] = %f with %f - %f + %f (%d,%d) expected %f and old %f block type %d\n", j, this->row[j], this->initial_row[j], prev_data * prev_data, next_data * next_data, _global_i, global_j, distance, exp_old, _type);
-
             update_min(j, min, _global_i, _global_j + j);
         }
         this->local_min_row[0] = min;
         // printf("Min value %f at index %d\n", min.value, min.index);
-        elem_per_row++;
+        ++elem_per_row;
         // Compute the rest of the quadrangle
         for (int i = 1; i < _height; ++i)
         {
@@ -500,9 +463,7 @@ private:
             update_min(current_start, min, _global_i + i, 0);
             // Compute the rest of the row
             compute_row(current_start + 1, _width, i, min);
-            elem_per_row++;
-            // printf("Min value %f at index %d\n", min.value, min.index);
-
+            ++elem_per_row;
         }
     }
 
@@ -521,7 +482,6 @@ private:
         else
         {
             initialize_with_initial_row(0, j_max, min);
-            // printf("Min value %f at index %d\n", std::abs(min.value), min.index);
         }
         for (int i = 1; i < i_max; ++i)
         {

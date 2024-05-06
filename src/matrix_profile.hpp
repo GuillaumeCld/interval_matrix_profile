@@ -329,8 +329,6 @@ auto blockSTOMP_v2(std::vector<T> &time_series, int window_size, const int block
         const auto distance = dotProduct(view, std::span(&time_series[j], window_size));
         first_row[j] = distance;
     }
-    matrix_profile[0] = first_row[n_sequence - 1];
-    //
     std::vector<block<double>> current_blocks(n_total_blocks + 2);
     std::vector<block<double>> previous_blocks(n_total_blocks + 2);
     // Loop to build the blocks
@@ -359,7 +357,7 @@ auto blockSTOMP_v2(std::vector<T> &time_series, int window_size, const int block
                     std::vector<double> initial_row(block_width, 0.0);
 
                     // Retrieve the initial row for the block's recurrence
-                    if (metarow == 0)
+                    if (metarow == 0) 
                     {
                         for (int j = 0; j < block_width; ++j)
                         {
