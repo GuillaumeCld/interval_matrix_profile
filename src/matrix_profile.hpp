@@ -1,6 +1,4 @@
-#ifndef MATRIX_PROFILE_H
-#define MATRIX_PROFILE_H
-
+#pragma once
 #include <iostream>
 #include <vector>
 #include <limits>
@@ -232,16 +230,16 @@ auto blockSTOMP(std::vector<T> &time_series, int window_size, int block_width, i
         nb_metarows++;
     }
 
-    const int missing = static_cast<int>(std::ceil((n_sequence - (n_blocks - static_cast<int>(std::ceil(static_cast<double>(block_height) / block_width))) * block_width) / static_cast<double>(block_width)));
+    const int missing = static_cast<int>(std::ceil((n_sequence - (n_blocks - static_cast<int>(std::ceil(static_cast<T>(block_height) / block_width))) * block_width) / static_cast<T>(block_width)));
     n_blocks = n_blocks + missing;
     int n_total_blocks = n_blocks;
     // Initialize the matrix profile and its index
     std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
     std::vector<int> profile_index(n_sequence, -1);
     // Array of local minimums per row for each block
-    std::vector<std::vector<min_pair<double>>> block_min_pair_per_row(n_total_blocks + 2);
+    std::vector<std::vector<min_pair<T>>> block_min_pair_per_row(n_total_blocks + 2);
     // Compute the first row of the distance matrixmake
-    std::vector<double> first_row(n_sequence);
+    std::vector<T> first_row(n_sequence);
     std::span view = std::span(&time_series[0], window_size);
     for (int j = 0; j < n_sequence; ++j)
     {
@@ -249,14 +247,14 @@ auto blockSTOMP(std::vector<T> &time_series, int window_size, int block_width, i
         first_row[j] = distance;
     }
     //
-    std::vector<block<double>> blocks(n_total_blocks + 2);
+    std::vector<block<T>> blocks(n_total_blocks + 2);
     // Loop to build the blocks
     int previous_diagonal_shift = block_height / block_width;
     if (block_height % block_width > 0)
     {
         previous_diagonal_shift++;
     }
-    std::vector<double> initial_row(block_width, 0.0);
+    std::vector<T> initial_row(block_width, 0.0);
     for (int metarow = 0; metarow < nb_metarows; ++metarow)
     {
         int block_shift = (metarow + 1) * block_height;
@@ -299,7 +297,7 @@ auto blockSTOMP(std::vector<T> &time_series, int window_size, int block_width, i
             }
             // Initialize the block
 
-            block<double> block(n_sequence,
+            block<T> block(n_sequence,
                                 window_size,
                                 exclude,
                                 block_i,
@@ -341,84 +339,83 @@ auto blockSTOMP(std::vector<T> &time_series, int window_size, int block_width, i
 }
 
 template <typename T>
-auto blockSTOMP_v2(std::vector<T> &time_series, int window_size, const int block_width, int block_height)
+auto blockSTOMP_v2(std::vector<T> &time_series, const int window_size, const int block_width, const int block_height)
 {
     // Time series parameters
     const int n = time_series.size();
-    const int n_sequence = n - window_size + 1;
+    const int n_sequence{n- window_size + 1};
     const int exclude = 2;
-    const int first_block_height = block_height;
+    const int first_block_height{block_height};
+    int current_block_height{block_height};
     // Block parameters
     int n_blocks = (n_sequence % block_width == 0) ? n_sequence / block_width : n_sequence / block_width + 1;
     int nb_metarows = (n_sequence % block_height == 0) ? n_sequence / block_height : n_sequence / block_height + 1;
-    const int missing = static_cast<int>(std::ceil((n_sequence - (n_blocks - static_cast<int>(std::ceil(static_cast<double>(block_height) / block_width))) * block_width) / static_cast<double>(block_width)));
+    const int missing = static_cast<int>(std::ceil((n_sequence - (n_blocks - static_cast<int>(std::ceil(static_cast<T>(block_height) / block_width))) * block_width) / static_cast<T>(block_width)));
     const int first_n_blocks = n_blocks + missing;
     int n_total_blocks = first_n_blocks;
     // Initialize the matrix profile and its index
     std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
     std::vector<int> profile_index(n_sequence, -1);
     // Array of local minimums per row for each block
-    std::vector<std::vector<min_pair<double>>> block_min_pair_per_row(n_total_blocks + 2);
+    std::vector<std::vector<min_pair<T>>> block_min_pair_per_row(n_total_blocks + 2);
     // Compute the first row of the distance matrixmake
-    std::vector<double> first_row(n_sequence);
+    std::vector<T> first_row(n_sequence);
     std::span view = std::span(&time_series[0], window_size);
 
-    std::vector<block<double>> current_blocks(n_total_blocks + 2);
-    std::vector<block<double>> previous_blocks(n_total_blocks + 2);
+    std::vector<block<T>> current_blocks(n_total_blocks + 2);
+    std::vector<std::vector<T>> previous_blocks(n_total_blocks + 2);
     // Loop to build the blocks
     int previous_diagonal_shift = (block_height % block_width > 0) ? block_height / block_width + 1 : block_height / block_width;
-#pragma omp parallel shared(first_row, time_series, current_blocks, block_min_pair_per_row, \
+    #pragma omp parallel shared(first_row, time_series, current_blocks, block_min_pair_per_row, \
                                 n_sequence, window_size, first_block_height, block_width, previous_blocks, previous_diagonal_shift, view)
     {
-#pragma omp for schedule(static)
+        #pragma omp for schedule(static)
         for (int j = 0; j < n_sequence; ++j)
         {
             first_row[j] = dotProduct(view, std::span(&time_series[j], window_size));
             ;
         }
-#pragma omp single
+        #pragma omp single
         {
             for (int metarow = 0; metarow < nb_metarows; ++metarow)
             {
-                const int block_shift = (metarow + 1) * block_height;
-                const int diagonal_shift = (block_shift % block_width > 0) ? block_shift / block_width + 1 : block_shift / block_width;
+                const int block_i{metarow * first_block_height};
+                const int block_shift{block_i + first_block_height};
 
-                const int row_length = -diagonal_shift * block_width + first_n_blocks * block_width + metarow * block_height;
+                const int diagonal_shift = (block_shift % block_width > 0) ? block_shift / block_width + 1 : block_shift / block_width;
+                const int row_length{(first_n_blocks-diagonal_shift) * block_width + block_i};
+
                 n_total_blocks = (row_length < n_sequence) ? n_total_blocks + 1 : first_n_blocks;
-                block_height = (metarow == nb_metarows - 1) ? n_sequence - metarow * first_block_height : first_block_height;
+                current_block_height = (metarow == nb_metarows - 1) ? n_sequence - block_i : first_block_height;
                 for (int block_id = n_total_blocks - 1; block_id >= 0; --block_id)
                 {
-#pragma omp task default(none)                                                                                                                        \
-    shared(first_row, time_series, current_blocks, block_min_pair_per_row, n_sequence, window_size, first_block_height, block_width, previous_blocks) \
-    firstprivate(metarow, block_id, block_shift, diagonal_shift, previous_diagonal_shift, row_length, n_total_blocks, block_height)                   \
-    untied
+                    #pragma omp task default(none)                                                                                                                        \
+                    shared(first_row, time_series, current_blocks, block_min_pair_per_row, n_sequence, window_size, first_block_height, block_width, previous_blocks) \
+                    firstprivate(metarow, block_id, block_shift, diagonal_shift, previous_diagonal_shift, row_length, n_total_blocks, current_block_height, block_i)                   \
+                    untied
                     {
-                        int previous_block_id = std::max(0, block_id - (diagonal_shift - previous_diagonal_shift));
-                        int block_j = -diagonal_shift * block_width + metarow * first_block_height + block_id * block_width;
-                        int block_i = metarow * first_block_height;
-                        std::vector<double> initial_row(block_width, 0.0);
-
+                        const int previous_block_id{std::max(0, block_id - (diagonal_shift - previous_diagonal_shift))};
+                        const int block_j{(block_id-diagonal_shift) * block_width + block_i};
+                        
+                        std::span<T> initial_row;
                         // Retrieve the initial row for the block's recurrence
                         if (metarow == 0)
                         {
-                            for (int j = 0; j < block_width; ++j)
-                            {
-                                initial_row[j] = first_row[block_j + j];
-                            }
+                            initial_row = std::span(&first_row[block_j], block_width);
                         }
                         else
                         {
-                            initial_row = previous_blocks[previous_block_id].get_row();
+                            initial_row = std::span(previous_blocks[previous_block_id].data(), block_width);
                         }
                         // Initialize the block
-                        block<double> block(n_sequence,
+                        block<T> block(n_sequence,
                                             window_size,
                                             exclude,
                                             block_i,
                                             block_j,
                                             block_id,
                                             block_width,
-                                            block_height,
+                                            current_block_height,
                                             first_row,
                                             initial_row,
                                             time_series);
@@ -428,16 +425,15 @@ auto blockSTOMP_v2(std::vector<T> &time_series, int window_size, const int block
                         block_min_pair_per_row[block_id] = current_blocks[block_id].get_local_min_rows();
                     }
                 }
-#pragma omp taskwait
+                #pragma omp taskwait
                 // Compute the global minimums per row
-                for (int i = 0; i < block_height; ++i)
+                for (int i = 0; i < current_block_height; ++i)
                 {
-                    auto min = std::numeric_limits<T>::max();
-                    int ind = -1;
-
+                    T min{std::numeric_limits<T>::max()};
+                    int ind{-1};
                     for (int k = 0; k < n_total_blocks; ++k)
                     {
-                        auto min_pair = block_min_pair_per_row[k][i];
+                        const min_pair<T> min_pair = block_min_pair_per_row[k][i];
                         if (min_pair.value < min)
                         {
                             min = min_pair.value;
@@ -445,11 +441,15 @@ auto blockSTOMP_v2(std::vector<T> &time_series, int window_size, const int block
                         }
                     }
 
-                    matrix_profile[metarow * first_block_height + i] = std::sqrt(std::abs(min));
-                    profile_index[metarow * first_block_height + i] = ind;
+                    matrix_profile[block_i + i] = std::sqrt(std::abs(min));
+                    profile_index[block_i + i] = ind;
                 }
                 previous_diagonal_shift = diagonal_shift;
-                previous_blocks = current_blocks;
+                for (int block_id = 0; block_id < n_total_blocks; ++block_id)
+                {
+                    previous_blocks[block_id] = std::move(current_blocks[block_id].get_row());
+                
+                }
             }
         }
     }
@@ -467,21 +467,21 @@ auto blockSTOMP_v3(std::vector<T> &time_series, int window_size, const int block
     // Block parameters
     int n_blocks = (n_sequence % block_width == 0) ? n_sequence / block_width : n_sequence / block_width + 1;
     int nb_metarows = (n_sequence % block_height == 0) ? n_sequence / block_height : n_sequence / block_height + 1;
-    const int missing = static_cast<int>(std::ceil((n_sequence - (n_blocks - static_cast<int>(std::ceil(static_cast<double>(block_height) / block_width))) * block_width) / static_cast<double>(block_width)));
+    const int missing = static_cast<int>(std::ceil((n_sequence - (n_blocks - static_cast<int>(std::ceil(static_cast<T>(block_height) / block_width))) * block_width) / static_cast<T>(block_width)));
     const int first_n_blocks = n_blocks + missing;
     int n_total_blocks = first_n_blocks;
     // Initialize the matrix profile and its index
     std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
     std::vector<int> profile_index(n_sequence, -1);
     // Array of local minimums per row for each block
-    std::vector<std::vector<min_pair<double>>> block_min_pair_per_row(n_total_blocks + 2);
+    std::vector<std::vector<min_pair<T>>> block_min_pair_per_row(n_total_blocks + 2);
     // Compute the first row of the distance matrixmake
-    std::vector<double> first_row(n_sequence);
+    std::vector<T> first_row(n_sequence);
     std::span view = std::span(&time_series[0], window_size);
 
     //
-    std::vector<block<double>> current_blocks(n_total_blocks + 2);
-    std::vector<block<double>> previous_blocks(n_total_blocks + 2);
+    std::vector<block<T>> current_blocks(n_total_blocks + 2);
+    std::vector<block<T>> previous_blocks(n_total_blocks + 2);
     // Loop to build the blocks
     int previous_diagonal_shift = (block_height % block_width > 0) ? block_height / block_width + 1 : block_height / block_width;
     min_pair<T> minimum = {-1, std::numeric_limits<T>::max()};
@@ -513,7 +513,7 @@ auto blockSTOMP_v3(std::vector<T> &time_series, int window_size, const int block
                         int previous_block_id = std::max(0, block_id - (diagonal_shift - previous_diagonal_shift));
                         int block_j = -diagonal_shift * block_width + metarow * first_block_height + block_id * block_width;
                         int block_i = metarow * first_block_height;
-                        std::vector<double> initial_row(block_width, 0.0);
+                        std::vector<T> initial_row(block_width, 0.0);
 
                         // Retrieve the initial row for the block's recurrence
                         if (metarow == 0)
@@ -528,7 +528,7 @@ auto blockSTOMP_v3(std::vector<T> &time_series, int window_size, const int block
                             initial_row = previous_blocks[previous_block_id].get_row();
                         }
                         // Initialize the block
-                        block<double> block(n_sequence,
+                        block<T> block(n_sequence,
                                             window_size,
                                             exclude,
                                             block_i,
@@ -587,28 +587,28 @@ auto blockSTOMP_v4(std::vector<T> &time_series, int window_size, const int block
     // Block parameters
     int n_blocks = (n_sequence % block_width == 0) ? n_sequence / block_width : n_sequence / block_width + 1;
     int nb_metarows = (n_sequence % block_height == 0) ? n_sequence / block_height : n_sequence / block_height + 1;
-    const int missing = static_cast<int>(std::ceil((n_sequence - (n_blocks - static_cast<int>(std::ceil(static_cast<double>(block_height) / block_width))) * block_width) / static_cast<double>(block_width)));
+    const int missing = static_cast<int>(std::ceil((n_sequence - (n_blocks - static_cast<int>(std::ceil(static_cast<T>(block_height) / block_width))) * block_width) / static_cast<T>(block_width)));
     const int first_n_blocks = n_blocks + missing;
     int n_total_blocks = first_n_blocks;
     // Initialize the matrix profile and its index
     std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
     std::vector<int> profile_index(n_sequence, -1);
     // Array of local minimums per row for each block
-    std::vector<std::vector<min_pair<double>>> block_min_pair_per_row(n_total_blocks + 2);
+    std::vector<std::vector<min_pair<T>>> block_min_pair_per_row(n_total_blocks + 2);
     // Compute the first row of the distance matrixmake
-    std::vector<double> first_row(n_sequence);
+    std::vector<T> first_row(n_sequence);
     std::span view = std::span(&time_series[0], window_size);
 
     //
-    std::vector<block<double>> current_blocks(n_total_blocks + 2);
-    std::vector<std::vector<double>> previous_blocks(n_total_blocks + 2);
+    std::vector<block<T>> current_blocks(n_total_blocks + 2);
+    std::vector<std::vector<T>> previous_blocks(n_total_blocks + 2);
     // Loop to build the blocks
     int previous_diagonal_shift = (block_height % block_width > 0) ? block_height / block_width + 1 : block_height / block_width;
     min_pair<T> minimum = {-1, std::numeric_limits<T>::max()};
     #pragma omp parallel shared(first_row, time_series, current_blocks, block_min_pair_per_row, view, first_n_blocks,\
                                 n_sequence, window_size, first_block_height, block_width, previous_blocks, previous_diagonal_shift, minimum)
     {
-        #pragma omp for
+        #pragma omp for schedule(static)
         for (int j = 0; j < n_sequence; ++j)
         {
             first_row[j] = dotProduct(view, std::span(&time_series[j], window_size));
@@ -633,7 +633,7 @@ auto blockSTOMP_v4(std::vector<T> &time_series, int window_size, const int block
                         int previous_block_id = std::max(0, block_id - (diagonal_shift - previous_diagonal_shift));
                         int block_j = -diagonal_shift * block_width + metarow * first_block_height + block_id * block_width;
                         int block_i = metarow * first_block_height;
-                        std::vector<double> initial_row(block_width, 0.0);
+                        std::vector<T> initial_row(block_width, 0.0);
                         // Retrieve the initial row for the block's recurrence
                         if (metarow == 0) [[unlikely]]
                         {
@@ -647,7 +647,7 @@ auto blockSTOMP_v4(std::vector<T> &time_series, int window_size, const int block
                             initial_row = previous_blocks[previous_block_id]; //.get_row();
                         }
                         // Initialize the block
-                        block<double> block(n_sequence,
+                        block<T> block(n_sequence,
                                             window_size,
                                             exclude,
                                             block_i,
@@ -698,4 +698,129 @@ auto blockSTOMP_v4(std::vector<T> &time_series, int window_size, const int block
     return std::make_tuple(matrix_profile, profile_index);
 }
 
-#endif // MATRIX_PROFILE_H
+
+template <typename T>
+auto blockSTOMP_v5(std::vector<T> &time_series, int window_size, const int block_width, int block_height)
+{
+    // Time series parameters
+    const int n = time_series.size();
+    const int n_sequence = n - window_size + 1;
+    const int exclude = 2;
+    const int first_block_height = block_height;
+    // Block parameters
+    int n_blocks = (n_sequence % block_width == 0) ? n_sequence / block_width : n_sequence / block_width + 1;
+    int nb_metarows = (n_sequence % block_height == 0) ? n_sequence / block_height : n_sequence / block_height + 1;
+    const int missing = static_cast<int>(std::ceil((n_sequence - (n_blocks - static_cast<int>(std::ceil(static_cast<T>(block_height) / block_width))) * block_width) / static_cast<T>(block_width)));
+    const int first_n_blocks = n_blocks + missing;
+    int n_total_blocks = first_n_blocks;
+    // Initialize the matrix profile and its index
+    std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
+    std::vector<int> profile_index(n_sequence, -1);
+    // Array of local minimums per row for each block
+    std::vector<std::vector<min_pair<T>>> block_min_pair_per_row(n_total_blocks + 2);
+    // Compute the first row of the distance matrixmake
+    std::vector<T> first_row(n_sequence);
+    std::span view = std::span(&time_series[0], window_size);
+
+    //
+    std::vector<block<T>> current_blocks(n_total_blocks + 2);
+    std::vector<std::vector<T>> previous_blocks(n_total_blocks + 2);
+    // Loop to build the blocks
+    int previous_diagonal_shift = (block_height % block_width > 0) ? block_height / block_width + 1 : block_height / block_width;
+    min_pair<T> minimum = {-1, std::numeric_limits<T>::max()};
+    #pragma omp parallel shared(first_row, time_series, current_blocks, block_min_pair_per_row, view, first_n_blocks,\
+                                n_sequence, window_size, first_block_height, block_width, previous_blocks, previous_diagonal_shift, minimum)
+    {
+        #pragma omp for schedule(static)
+        for (int j = 0; j < n_sequence; ++j)
+        {
+            first_row[j] = dotProduct(view, std::span(&time_series[j], window_size));
+        }
+
+        for (int metarow = 0; metarow < nb_metarows; ++metarow)
+        {
+            
+            const int block_shift = (metarow + 1) * first_block_height;
+            int block_i = metarow * first_block_height;
+
+            const int diagonal_shift = (block_shift % block_width > 0) ? block_shift / block_width + 1 : block_shift / block_width;
+            #pragma omp single
+            {
+                const int row_length = -diagonal_shift * block_width + first_n_blocks * block_width + block_i;
+                n_total_blocks = (row_length < n_sequence) ? first_n_blocks + 1 : first_n_blocks;
+                block_height = (metarow == nb_metarows - 1) ? n_sequence - block_i : first_block_height;
+
+                for (int block_id = n_total_blocks - 1; block_id >= 0; --block_id)
+                {
+                #pragma omp task default(none)                                                                                                                        \
+                    shared(first_row, time_series, current_blocks, block_min_pair_per_row, n_sequence, window_size, first_block_height, block_width, previous_blocks) \
+                    firstprivate(metarow, block_id, block_shift, diagonal_shift, previous_diagonal_shift, row_length, n_total_blocks, block_height, block_i)          \
+                    untied
+                    {
+                        int previous_block_id{std::max(0, block_id - (diagonal_shift - previous_diagonal_shift))};
+                        int block_j{block_width * (block_id - diagonal_shift) + block_i};
+
+
+                        std::span<T> initial_row;     
+                        // Retrieve the initial row for the block's recurrence
+                        if (metarow == 0) [[unlikely]]
+                        {
+                            initial_row = std::span(&first_row[block_j], block_width);     
+                        }
+                        else [[likely]]
+                        {
+                            // auto &tmp = previous_blocks[previous_block_id];
+                            initial_row = std::span(previous_blocks[previous_block_id].data(), block_width); //.get_row();
+                        }
+                        // Initialize the block
+                        block<T> block(n_sequence,
+                                        window_size,
+                                        exclude,
+                                        block_i,
+                                        block_j,
+                                        block_id,
+                                        block_width,
+                                        block_height,
+                                        first_row,
+                                        initial_row,
+                                        time_series);
+
+                        current_blocks[block_id] = std::move(block);
+                        current_blocks[block_id].STOMP();
+                        // retrieve the minimums per row
+                        block_min_pair_per_row[block_id] = std::move(current_blocks[block_id].get_local_min_rows());
+                    }
+                }
+            #pragma omp taskwait
+            }
+            // Compute the global minimums per row
+            for (int i = 0; i < block_height; ++i)
+            {
+                #pragma omp for reduction(min_pair_min : minimum) 
+                for (int k = 0; k < n_total_blocks; ++k)
+                {
+                    auto &min_pair = block_min_pair_per_row[k][i];
+                    minimum = min_pair_min2(minimum, min_pair);
+                }
+                #pragma omp single
+                {
+                    matrix_profile[metarow * first_block_height + i] = std::sqrt(std::abs(minimum.value));
+                    profile_index[metarow * first_block_height + i] = minimum.index;
+                    minimum = {-1, std::numeric_limits<T>::max()};
+                }
+            }
+            #pragma omp single
+            {
+                previous_diagonal_shift = diagonal_shift;
+                // previous_blocks = current_blocks;
+                for (int block_id = n_total_blocks - 1; block_id >= 0; --block_id)
+                {
+                    previous_blocks[block_id] = std::move(current_blocks[block_id].get_row());
+                
+                }
+            }
+        }
+    }
+    return std::make_tuple(matrix_profile, profile_index);
+}
+

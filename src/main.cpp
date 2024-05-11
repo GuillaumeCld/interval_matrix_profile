@@ -10,6 +10,8 @@
 #include <utils.hpp>
 
 
+using value_type= double;
+
 void testDistance(){
   printf("testDistance\n");
     // Test case 1: Same vector
@@ -145,7 +147,7 @@ void compareStumpy(){
 void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
     // Generate random vector
 
-    std::vector<double> data;
+    std::vector<value_type> data;
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0.0, 1.0); // Random numbers between 0 and 1
@@ -223,21 +225,40 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
     // duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
     // std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
 
-
-    std::cout << "BlockSTOMP v3" << std::endl;
+    std::cout << "BlockSTOMP v2" << std::endl;
     // Measure computation time
     auto start_time = std::chrono::high_resolution_clock::now();
-    auto mpOutput = blockSTOMP_v3(data, window_size, 5000, 5000);
+    auto mpOutput = blockSTOMP_v2(data, window_size, 5000, 5000);
     auto matrix_profile_blockstomp = std::get<0>(mpOutput);
     auto end_time = std::chrono::high_resolution_clock::now();
     // Compute duration
     auto duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
     std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
 
+    std::cout << "BlockSTOMP v3" << std::endl;
+    // Measure computation time
+    start_time = std::chrono::high_resolution_clock::now();
+    mpOutput = blockSTOMP_v3(data, window_size, 5000, 5000);
+    matrix_profile_blockstomp = std::get<0>(mpOutput);
+    end_time = std::chrono::high_resolution_clock::now();
+    // Compute duration
+    duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
+
     std::cout << "BlockSTOMP v4" << std::endl;
     // Measure computation time
     start_time = std::chrono::high_resolution_clock::now();
     mpOutput = blockSTOMP_v4(data, window_size, 5000, 5000);
+    matrix_profile_blockstomp = std::get<0>(mpOutput);
+    end_time = std::chrono::high_resolution_clock::now();
+    // Compute duration
+    duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
+
+    std::cout << "BlockSTOMP v5" << std::endl;
+    // Measure computation time
+    start_time = std::chrono::high_resolution_clock::now();
+    mpOutput = blockSTOMP_v5(data, window_size, 5000, 5000);
     matrix_profile_blockstomp = std::get<0>(mpOutput);
     end_time = std::chrono::high_resolution_clock::now();
     // Compute duration
@@ -272,7 +293,7 @@ int main() {
   // testDistance();
   //  compareStumpy();
 
-  testMatrixProfileComputationSpeed(1000000, 14);
+  testMatrixProfileComputationSpeed(132000, 64);
   // test_stompv2(1000, 1);
 
   return 0;

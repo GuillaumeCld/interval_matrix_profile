@@ -14,7 +14,7 @@
  * @return the scalar distance
  */
 template <typename T, std::size_t N>
-inline auto euclideanDistance(const std::span<T, N> &x, const std::span<T, N> &y) -> T
+inline auto euclideanDistance(std::span<T, N> const &x, std::span<T, N> const &y) -> T
 {
 
     static_assert(std::is_floating_point<T>::value, " works only with floating values");
@@ -36,7 +36,7 @@ inline auto euclideanDistance(const std::span<T, N> &x, const std::span<T, N> &y
  * @return double
  */
 template <typename T, std::size_t N>
-inline auto dotProduct(const std::span<T, N> &x, const std::span<T, N> &y) -> T
+inline auto dotProduct(std::span<T, N> const &x, std::span<T, N> const &y) -> T
 {
     static_assert(std::is_floating_point<T>::value, " works only with floating values");
 
