@@ -49,17 +49,17 @@ public:
     /**
      * @brief Constructor
      */
-    block(int n,
-          int m,
-          int exclude,
-          int i,
-          int j,
-          int ID,
-          int width,
-          int height,
-          std::span<T> in_first_row,
-          std::span<T> in_initial_row,
-          std::span<T> in_time_series)
+    block(const int n,
+          const int m,
+          const int exclude,
+          const int i,
+          const int j,
+          const int ID,
+          const int width,
+          const int height,
+          std::span<T> const in_first_row,
+          std::span<T> const in_initial_row,
+          std::span<T> const in_time_series)
         : _n(n),
           _m(m),
           _exclude(exclude),
@@ -231,18 +231,22 @@ private:
     }
 
     /**
-     * @brief Update the recurrence of the row and compute the minimum of the row
-     * @param start the start index of the row
-     * @param end the end index of the row
-     * @param i the index of the row
-     * @param min the pair to update
+     * @brief Update the recurrence of the row and compute the minimum of the row.
+     * 
+     * @param start The start index of the row.
+     * @param end The end index of the row.
+     * @param i The index of the row.
+     * @param min The pair to update.
      */
-    inline void compute_row(const int start, const int end, const int i, min_pair<T> &min)
+    inline void compute_row(const int start, const int end, int i, min_pair<T> &min)
     {
+        const int global_i = _global_i + i;
+        int global_j = _global_j + start + i;
         for (int j = start; j < end; ++j)
         {
-            update_row(j, _global_i + i, _global_j + i + j);
-            update_min(j, min, _global_i + i, _global_j + j + i);
+            update_row(j, global_i, global_j);
+            update_min(j, min, global_i, global_j);
+            ++global_j;
         }
         this->local_min_row[i] = min;
     }

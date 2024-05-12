@@ -7,6 +7,7 @@
 #include <span>
 #include <fstream>
 #include <matrix_profile.hpp>
+#include <seasonal_matrix_profile.hpp>
 #include <utils.hpp>
 
 
@@ -293,7 +294,7 @@ int main() {
   // testDistance();
   //  compareStumpy();
 
-  testMatrixProfileComputationSpeed(1000000, 64);
+  testMatrixProfileComputationSpeed(500000, 64);
   // test_stompv2(1000, 1);
 
   return 0;
