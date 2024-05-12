@@ -57,9 +57,9 @@ public:
           int ID,
           int width,
           int height,
-          std::vector<T> &in_first_row,
+          std::span<T> in_first_row,
           std::span<T> in_initial_row,
-          std::vector<T> &in_time_series)
+          std::span<T> in_time_series)
         : _n(n),
           _m(m),
           _exclude(exclude),
@@ -68,9 +68,9 @@ public:
           ID(ID),
           _width(width),
           _height(height),
-          first_row(&in_first_row),
+          first_row(in_first_row),
           initial_row(in_initial_row),
-          time_series(&in_time_series)
+          time_series(in_time_series)
     {
         this->local_min_row.resize(height);
         this->row.resize(width);
@@ -196,9 +196,9 @@ private:
     int _global_i;                          // i coordinate top left corner
     int _global_j;                          // j coordinate top left corner
     std::vector<T> row;                     // the row for the recurrence in the block
-    std::vector<T> *first_row;              // the first row of the distance matrix
+    std::span<T> first_row;              // the first row of the distance matrix
     std::span<T> initial_row;               // the initial row for the recurrence
-    std::vector<T> *time_series;            // the time series
+    std::span<T> time_series;            // the time series
     std::vector<min_pair<T>> local_min_row; // the array of minimum per row in the block
 
     /**
@@ -224,8 +224,8 @@ private:
     inline void update_row(const int j, const int global_i, const int global_j)
     {
         // Compute the elements to remove (prev) and the elements to add (next)
-        const T prev_data{(*(this->time_series))[global_i - 1] - (*(this->time_series))[global_j - 1]};
-        const T next_data{(*(this->time_series))[global_i + _m - 1] - (*(this->time_series))[global_j + _m - 1]};
+        const T prev_data{this->time_series[global_i - 1] - this->time_series[global_j - 1]};
+        const T next_data{this->time_series[global_i + _m - 1] - this->time_series[global_j + _m - 1]};
         // Update the row following the recurrence
         this->row[j] += (next_data * next_data - prev_data * prev_data);
     }
@@ -257,7 +257,7 @@ private:
     {
         for (int j = start; j < end; ++j)
         {
-            this->row[j] = (*(this->first_row))[_global_j + j];
+            this->row[j] = this->first_row[_global_j + j];
             update_min(j, min, _global_i, _global_j + j);
         }
         this->local_min_row[0] = min;
@@ -275,8 +275,8 @@ private:
         for (int j = start; j < end; ++j)
         {
             // Compute the elements to remove (prev) and the elements to add (next)
-            const T prev_data{(*(this->time_series))[global_j - 1] - (*(this->time_series))[_global_i - 1]};
-            const T next_data{(*(this->time_series))[global_j + _m - 1] - (*(this->time_series))[_global_i + _m - 1]};
+            const T prev_data{this->time_series[global_j - 1] - this->time_series[_global_i - 1]};
+            const T next_data{this->time_series[global_j + _m - 1] - this->time_series[_global_i + _m - 1]};
             // Update the row following the recurrence
             this->row[j] = this->initial_row[j] + (next_data * next_data - prev_data * prev_data);
             update_min(j, min, _global_i, global_j);
@@ -303,7 +303,7 @@ private:
             if (_global_j == 0) [[unlikely]]
             {
                 // Case first column of the distance matrix
-                this->row[0] = (*(this->first_row))[_global_i];
+                this->row[0] = this->first_row[_global_i];
                 update_min(0, min, _global_i, 0);
                 initialize_with_initial_row(1, _width, min);
             }
@@ -336,7 +336,7 @@ private:
         {
             min_pair<T> min{-1, std::numeric_limits<T>::max()};
             // Compute the first element of the row after the truncation
-            this->row[current_start] = (*(this->first_row))[_global_i + i];
+            this->row[current_start] = this->first_row[_global_i + i];
             update_min(current_start, min, _global_i + i, 0);
             // Compute the rest of the row
             compute_row(current_start + 1, _width, i, min);
@@ -355,14 +355,14 @@ private:
         const int nb_right_elements{_width - nb_left_elements};
         min_pair<T> min{-1, std::numeric_limits<T>::max()};
         // intialize the first row
-        this->row[nb_left_elements] = (*(this->first_row))[_global_i];
+        this->row[nb_left_elements] = this->first_row[_global_i];
         update_min(nb_left_elements, min, _global_i, 0);
 
         int global_j{_global_j + nb_left_elements + 1};
         for (int j = 1; j < nb_right_elements; ++j)
         {
-            const T prev_data{(*(this->time_series))[global_j - 1] - (*(this->time_series))[_global_i - 1]};
-            const T next_data{(*(this->time_series))[global_j + _m - 1] - (*(this->time_series))[_global_i + _m - 1]};
+            const T prev_data{this->time_series[global_j - 1] - this->time_series[_global_i - 1]};
+            const T next_data{this->time_series[global_j + _m - 1] - this->time_series[_global_i + _m - 1]};
             this->row[nb_left_elements + j] = this->initial_row[nb_left_elements + j] + (next_data * next_data - prev_data * prev_data);
             update_min(nb_left_elements + j, min, _global_i, global_j);
             ++global_j;
@@ -380,7 +380,7 @@ private:
         {
             min_pair<T> min{-1, std::numeric_limits<T>::max()};
             // Compute the first element of the row after the truncation
-            this->row[row_start] = (*(this->first_row))[global_i];
+            this->row[row_start] = this->first_row[global_i];
             update_min(row_start, min, global_i, 0);
             // Compute the rest of the row
             compute_row(row_start + 1, _width, i, min);
@@ -415,7 +415,7 @@ private:
         {
             min_pair<T> min{-1, std::numeric_limits<T>::max()};
             // First element of the row after the truncation
-            this->row[current_start] = (*(this->first_row))[global_i];
+            this->row[current_start] = this->first_row[global_i];
             update_min(current_start, min, global_i, 0);
             // Compute the rest of the row
             compute_row(current_start + 1, _width, i, min);
@@ -440,15 +440,15 @@ private:
         int current_start{_width - elem_per_row};
         min_pair<T> min{-1, std::numeric_limits<T>::max()};
         // Initialize the first row
-        this->row[current_start] = (*(this->first_row))[_global_i];
+        this->row[current_start] = this->first_row[_global_i];
         update_min(current_start, min, _global_i, 0);
 
         int global_j{_global_j + current_start + 1}; 
         for (int j = current_start + 1; j < _width; ++j)
         {
             // Compute the elements to remove (prev) and the elements to add (next)
-            const T prev_data{(*(this->time_series))[global_j - 1] - (*(this->time_series))[_global_i - 1]};
-            const T next_data{(*(this->time_series))[global_j + _m - 1] - (*(this->time_series))[_global_i + _m - 1]};
+            const T prev_data{this->time_series[global_j - 1] - this->time_series[_global_i - 1]};
+            const T next_data{this->time_series[global_j + _m - 1] - this->time_series[_global_i + _m - 1]};
             // Update the row following the recurrence
             this->row[j] = this->initial_row[j] + (next_data * next_data - prev_data * prev_data);
             update_min(j, min, _global_i, global_j);
@@ -463,7 +463,7 @@ private:
         {
             min_pair<T> min{-1, std::numeric_limits<T>::max()};
             // Compute the first element of the row
-            this->row[current_start] = (*(this->first_row))[global_i];
+            this->row[current_start] = this->first_row[global_i];
             update_min(current_start, min, global_i, 0);
             // Compute the rest of the row
             compute_row(current_start + 1, _width, i, min);

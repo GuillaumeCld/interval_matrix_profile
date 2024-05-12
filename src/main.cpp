@@ -293,7 +293,7 @@ int main() {
   // testDistance();
   //  compareStumpy();
 
-  testMatrixProfileComputationSpeed(132000, 64);
+  testMatrixProfileComputationSpeed(1000000, 64);
   // test_stompv2(1000, 1);
 
   return 0;
