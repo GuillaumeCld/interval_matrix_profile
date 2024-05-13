@@ -752,10 +752,10 @@ auto blockSTOMP_v5(std::vector<T> &time_series, int window_size, const int block
 
                 for (int block_id = n_total_blocks - 1; block_id >= 0; --block_id)
                 {
-                #pragma omp task default(none)                                                                                                                        \
-                    shared(first_row, time_series, current_blocks, block_min_pair_per_row, n_sequence, window_size, first_block_height, block_width, previous_blocks) \
-                    firstprivate(metarow, block_id, block_shift, diagonal_shift, previous_diagonal_shift, row_length, n_total_blocks, block_height, block_i)          \
-                    untied
+                    #pragma omp task default(none)                                                                                                                        \
+                        shared(first_row, time_series, current_blocks, block_min_pair_per_row, n_sequence, window_size, first_block_height, block_width, previous_blocks) \
+                        firstprivate(metarow, block_id, block_shift, diagonal_shift, previous_diagonal_shift, row_length, n_total_blocks, block_height, block_i)          \
+                        untied
                     {
                         int previous_block_id{std::max(0, block_id - (diagonal_shift - previous_diagonal_shift))};
                         int block_j{block_width * (block_id - diagonal_shift) + block_i};
@@ -784,11 +784,10 @@ auto blockSTOMP_v5(std::vector<T> &time_series, int window_size, const int block
                                         first_row,
                                         initial_row,
                                         time_series);
-
                         current_blocks[block_id] = std::move(block);
                         current_blocks[block_id].STOMP();
                         // retrieve the minimums per row
-                        block_min_pair_per_row[block_id] = std::move(current_blocks[block_id].get_local_min_rows());
+                        block_min_pair_per_row[block_id] = current_blocks[block_id].get_local_min_rows();
                     }
                 }
             #pragma omp taskwait

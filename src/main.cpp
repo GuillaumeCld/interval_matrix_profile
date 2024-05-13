@@ -290,11 +290,36 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
   }
 
 
+auto smp()
+{
+    std::vector<double> data;
+    readFile<double>("../Data/ts_sst.txt", data, "%lf");
+    // Define the window size, exclude value, and seasons
+    int window_size = 3;
+    int exclude = 1;
+    const int n = data.size() - window_size + 1;
+    std::vector<std::vector<std::pair<int, int>>> seasons;
+    seasons.push_back(build_season_vector<double>("../Data/seasons_sst_0.txt", n));
+    seasons.push_back(build_season_vector<double>("../Data/seasons_sst_1.txt", n));
+    seasons.push_back(build_season_vector<double>("../Data/seasons_sst_2.txt", n));
+    seasons.push_back(build_season_vector<double>("../Data/seasons_sst_3.txt", n));
+
+
+    // Calculate the matrix profile using the three methods
+    printf("Brute force\n");
+    auto result_brute_force = seasonal_matrix_profile_brute_force(data, window_size, exclude, seasons);
+    printf("Brute force blocking\n");
+    auto result_brute_force_blocking = seasonal_matrix_profile_brute_force_blocking(data, window_size, exclude, seasons);
+    printf("STOMP\n");
+    auto result_stomp = seasonal_matrix_profile_STOMP_blocking(data, window_size, exclude, seasons);
+
+}
+
 int main() {
   // testDistance();
   //  compareStumpy();
-
-  testMatrixProfileComputationSpeed(500000, 64);
+  smp();
+  // testMatrixProfileComputationSpeed(100000, 64);
   // test_stompv2(1000, 1);
 
   return 0;

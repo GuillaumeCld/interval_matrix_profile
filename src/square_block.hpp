@@ -44,8 +44,8 @@ public:
                  const int j,
                  const int width,
                  const int height,
-                 std::vector<T> in_local_min_row,
-                 std::span<T> const in_time_series)
+                 std::vector<min_pair<T>> in_local_min_row,
+                 std::span<T> in_time_series)
         : _n(n),
           _m(m),
           _exclude(exclude),
@@ -71,7 +71,7 @@ public:
      *
      * @return std::vector<min_pair<T>>& The array of minimum per row.
      */
-    std::vector<min_pair<T>> &get_local_min_rows()
+    std::vector<min_pair<T>> get_local_min_rows()
     {
         return this->local_min_row;
     }
@@ -166,7 +166,7 @@ public:
     void print(std::ostream &out)
     {
         out << "Block " << " i " << _global_i << " j " << _global_j << std::endl;
-        out << "Initial row: ";
+        out << "Min row: ";
         for (int i = 0; i < _height; ++i)
         {
             out << this->local_min_row[i] << " ";

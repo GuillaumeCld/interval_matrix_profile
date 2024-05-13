@@ -32,41 +32,41 @@ protected:
     // Class members declared here can be used by all tests in the test suite for Block.
 };
 
-// TEST_F(MpTest, BruteForce_sst)
-// {
-//     std::vector<double> ts;
-//     readFile<double>("../Data/ts_sst.txt", ts, "%lf");
-//     std::vector<double> mp_ref;
-//     readFile<double>("../Data/mp_sst.txt", mp_ref, "%lf");
-//     int window_size = 7;
+TEST_F(MpTest, BruteForce_sst)
+{
+    std::vector<double> ts;
+    readFile<double>("../Data/ts_sst.txt", ts, "%lf");
+    std::vector<double> mp_ref;
+    readFile<double>("../Data/mp_sst.txt", mp_ref, "%lf");
+    int window_size = 7;
 
-//     auto mpOutput = computeMatrixProfileBruteForce(ts, window_size);
-//     std::vector<double> matrix_profile_brute_force = std::get<0>(mpOutput);
-//     std::vector<int> index_profile_brute_force = std::get<1>(mpOutput);
+    auto mpOutput = computeMatrixProfileBruteForce(ts, window_size);
+    std::vector<double> matrix_profile_brute_force = std::get<0>(mpOutput);
+    std::vector<int> index_profile_brute_force = std::get<1>(mpOutput);
 
-//     for (int i = 0; i < matrix_profile_brute_force.size(); ++i)
-//     {
-//         EXPECT_NEAR(mp_ref[i], matrix_profile_brute_force[i], 2e-7) << "Incorrect mp value at index " << i;
-//     }
-// }
+    for (int i = 0; i < matrix_profile_brute_force.size(); ++i)
+    {
+        EXPECT_NEAR(mp_ref[i], matrix_profile_brute_force[i], 2e-7) << "Incorrect mp value at index " << i;
+    }
+}
 
-// TEST_F(MpTest, STOMP_sst)
-// {
-//     std::vector<double> ts;
-//     readFile<double>("../Data/ts_sst.txt", ts, "%lf");
-//     std::vector<double> mp_ref;
-//     readFile<double>("../Data/mp_sst.txt", mp_ref, "%lf");
-//     int window_size = 7;
+TEST_F(MpTest, STOMP_sst)
+{
+    std::vector<double> ts;
+    readFile<double>("../Data/ts_sst.txt", ts, "%lf");
+    std::vector<double> mp_ref;
+    readFile<double>("../Data/mp_sst.txt", mp_ref, "%lf");
+    int window_size = 7;
 
-//     auto mpOutput = blockSTOMP_v2(ts, window_size, 100, 100);
-//     std::vector<double> matrix_profile = std::get<0>(mpOutput);
-//     std::vector<int> index_profile = std::get<1>(mpOutput);
+    auto mpOutput = blockSTOMP_v2(ts, window_size, 100, 100);
+    std::vector<double> matrix_profile = std::get<0>(mpOutput);
+    std::vector<int> index_profile = std::get<1>(mpOutput);
 
-//     for (int i = 0; i < matrix_profile.size(); ++i)
-//     {
-//         EXPECT_NEAR(mp_ref[i], matrix_profile[i], 2e-7) << "Incorrect mp value at index " << i;
-//     }
-// }
+    for (int i = 0; i < matrix_profile.size(); ++i)
+    {
+        EXPECT_NEAR(mp_ref[i], matrix_profile[i], 2e-7) << "Incorrect mp value at index " << i;
+    }
+}
 
 TEST_F(MpTest, Block)
 {
@@ -97,12 +97,10 @@ TEST_F(MpTest, Block)
             std::vector<int> matrix_profile_index_block = std::get<1>(BlockMpOutput);
             for (int i = 0; i < matrix_profile_stomp_bf.size(); ++i)
             {
-                EXPECT_NEAR(matrix_profile_stomp_bf[i], matrix_profile_stomp_block[i], 1e-10) << "Incorrect mp value at index " << i << \
-                " height" << block_height << " and  width" << block_width << "NN index bd:" << matrix_profile_index_bf[i] << " stomp: " << matrix_profile_index_block[i];
+                EXPECT_NEAR(matrix_profile_stomp_bf[i], matrix_profile_stomp_block[i], 1e-10) << "Incorrect mp value at index " << i << " height" << block_height << " and  width" << block_width << "NN index bd:" << matrix_profile_index_bf[i] << " stomp: " << matrix_profile_index_block[i];
             }
         }
     }
-
 }
 
 TEST_F(MpTest, Block_v2)
@@ -133,8 +131,8 @@ TEST_F(MpTest, Block_v2)
             std::vector<int> matrix_profile_index_block = std::get<1>(BlockMpOutput);
             for (int i = 0; i < matrix_profile_stomp_bf.size(); ++i)
             {
-                EXPECT_NEAR(matrix_profile_stomp_bf[i], matrix_profile_stomp_block[i], 1e-10) << "Incorrect mp value at index " << i << \
-                " height" << block_height << " and  width" << block_width << "NN index bd:" << matrix_profile_index_bf[i] << " stomp: " << matrix_profile_index_block[i];            }
+                EXPECT_NEAR(matrix_profile_stomp_bf[i], matrix_profile_stomp_block[i], 1e-10) << "Incorrect mp value at index " << i << " height" << block_height << " and  width" << block_width << "NN index bd:" << matrix_profile_index_bf[i] << " stomp: " << matrix_profile_index_block[i];
+            }
         }
     }
     // auto BlockMpOutput = blockSTOMP_v2(data, window_size, 10, 60);
@@ -144,7 +142,6 @@ TEST_F(MpTest, Block_v2)
     // {
     //     EXPECT_NEAR(matrix_profile_stomp_bf[i], matrix_profile_stomp_block[i], 1e-10) << "Incorrect mp value at index " << i;
     // }
-    
 }
 
 TEST_F(MpTest, Block_v3)
@@ -252,7 +249,7 @@ TEST_F(MpTest, Block_v5)
     {
         for (int block_height = 10; block_height <= 90; block_height += 10)
         {
-            auto BlockMpOutput = blockSTOMP_v4(data, window_size, block_width, block_height);
+            auto BlockMpOutput = blockSTOMP_v5(data, window_size, block_width, block_height);
             std::vector<double> matrix_profile_stomp_block = std::get<0>(BlockMpOutput);
             std::vector<int> matrix_profile_index_block = std::get<1>(BlockMpOutput);
             for (int i = 0; i < matrix_profile_stomp_bf.size(); ++i)
