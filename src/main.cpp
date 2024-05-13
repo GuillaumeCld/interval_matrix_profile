@@ -160,20 +160,20 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
     }
 
 
-    // std::cout << "Brute Force" << std::endl;
+    std::cout << "Brute Force" << std::endl;
 
-    // // Measure computation time
-    // auto start_time = std::chrono::high_resolution_clock::now();
-    // auto mpOutput = computeMatrixProfileBruteForce(data, window_size);
-    // auto matrix_profile = std::get<0>(mpOutput);
-    // auto end_time = std::chrono::high_resolution_clock::now();
+    // Measure computation time
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto mpOutput = computeMatrixProfileBruteForce(data, window_size);
+    auto matrix_profile = std::get<0>(mpOutput);
+    auto end_time = std::chrono::high_resolution_clock::now();
     
-    // // // Compute duration
-    // auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    // // Compute duration
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
 
-    // // // Output results
-    // std::cout << "Matrix profile computed for vector of size " << vector_size << " with window size " << window_size << std::endl;
-    // std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
+    // // Output results
+    std::cout << "Matrix profile computed for vector of size " << vector_size << " with window size " << window_size << std::endl;
+    std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
     
 
     // std::cout << "Brute Force v2" << std::endl;
@@ -228,43 +228,43 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
 
     std::cout << "BlockSTOMP v2" << std::endl;
     // Measure computation time
-    auto start_time = std::chrono::high_resolution_clock::now();
-    auto mpOutput = blockSTOMP_v2(data, window_size, 5000, 5000);
+    start_time = std::chrono::high_resolution_clock::now();
+    mpOutput = blockSTOMP_v2(data, window_size, 5000, 5000);
     auto matrix_profile_blockstomp = std::get<0>(mpOutput);
-    auto end_time = std::chrono::high_resolution_clock::now();
-    // Compute duration
-    auto duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-    std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
-
-    std::cout << "BlockSTOMP v3" << std::endl;
-    // Measure computation time
-    start_time = std::chrono::high_resolution_clock::now();
-    mpOutput = blockSTOMP_v3(data, window_size, 5000, 5000);
-    matrix_profile_blockstomp = std::get<0>(mpOutput);
     end_time = std::chrono::high_resolution_clock::now();
     // Compute duration
     duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
     std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
 
-    std::cout << "BlockSTOMP v4" << std::endl;
-    // Measure computation time
-    start_time = std::chrono::high_resolution_clock::now();
-    mpOutput = blockSTOMP_v4(data, window_size, 5000, 5000);
-    matrix_profile_blockstomp = std::get<0>(mpOutput);
-    end_time = std::chrono::high_resolution_clock::now();
-    // Compute duration
-    duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-    std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
+    // std::cout << "BlockSTOMP v3" << std::endl;
+    // // Measure computation time
+    // start_time = std::chrono::high_resolution_clock::now();
+    // mpOutput = blockSTOMP_v3(data, window_size, 5000, 5000);
+    // matrix_profile_blockstomp = std::get<0>(mpOutput);
+    // end_time = std::chrono::high_resolution_clock::now();
+    // // Compute duration
+    // duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    // std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
 
-    std::cout << "BlockSTOMP v5" << std::endl;
-    // Measure computation time
-    start_time = std::chrono::high_resolution_clock::now();
-    mpOutput = blockSTOMP_v5(data, window_size, 5000, 5000);
-    matrix_profile_blockstomp = std::get<0>(mpOutput);
-    end_time = std::chrono::high_resolution_clock::now();
-    // Compute duration
-    duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-    std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
+    // std::cout << "BlockSTOMP v4" << std::endl;
+    // // Measure computation time
+    // start_time = std::chrono::high_resolution_clock::now();
+    // mpOutput = blockSTOMP_v4(data, window_size, 5000, 5000);
+    // matrix_profile_blockstomp = std::get<0>(mpOutput);
+    // end_time = std::chrono::high_resolution_clock::now();
+    // // Compute duration
+    // duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    // std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
+
+    // std::cout << "BlockSTOMP v5" << std::endl;
+    // // Measure computation time
+    // start_time = std::chrono::high_resolution_clock::now();
+    // mpOutput = blockSTOMP_v5(data, window_size, 5000, 5000);
+    // matrix_profile_blockstomp = std::get<0>(mpOutput);
+    // end_time = std::chrono::high_resolution_clock::now();
+    // // Compute duration
+    // duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    // std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
 
   //   double difference_norm = compute_vector_difference_norm(matrix_profile, matrix_profile_stomp);
   //   std::cout << "Norm of the difference: " << difference_norm << std::endl;
@@ -290,36 +290,61 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
   }
 
 
-auto smp()
-{
-    std::vector<double> data;
-    readFile<double>("../Data/ts_sst.txt", data, "%lf");
-    // Define the window size, exclude value, and seasons
-    int window_size = 3;
-    int exclude = 1;
-    const int n = data.size() - window_size + 1;
+auto smp_computation_speed(int vector_size, int period_size, int n_seasons, int window_size) {
+    // Generate random vector
+
+    std::vector<value_type> data;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0.0, 1.0); // Random numbers between 0 and 1
+
+    std::cout << "Random gen" << std::endl;
+
+    for (int i = 0; i < vector_size; ++i) {
+        data.push_back(dis(gen));
+    }
+    int exclude = 2;
+    const int n_sequence = data.size() - window_size + 1;
+    int season_size = period_size / n_seasons;
+    int n_period = vector_size / period_size;
     std::vector<std::vector<std::pair<int, int>>> seasons;
-    seasons.push_back(build_season_vector<double>("../Data/seasons_sst_0.txt", n));
-    seasons.push_back(build_season_vector<double>("../Data/seasons_sst_1.txt", n));
-    seasons.push_back(build_season_vector<double>("../Data/seasons_sst_2.txt", n));
-    seasons.push_back(build_season_vector<double>("../Data/seasons_sst_3.txt", n));
+    for (int i = 0; i < n_seasons; ++i) {
+      std::vector<std::pair<int, int>> season;
+      for (int j = 0; j < vector_size; j += period_size) {
+        const int start = j + i * season_size;
+        const int end = std::min(start + season_size, n_sequence);
+        season.push_back(std::make_pair(start, end));
+      }
+      seasons.push_back(season);
+    }
 
 
     // Calculate the matrix profile using the three methods
-    printf("Brute force\n");
+    auto start_time = std::chrono::high_resolution_clock::now();
     auto result_brute_force = seasonal_matrix_profile_brute_force(data, window_size, exclude, seasons);
-    printf("Brute force blocking\n");
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    std::cout << "Brute force execution time: " << duration.count() << " seconds" << std::endl;
+
+    start_time = std::chrono::high_resolution_clock::now();
     auto result_brute_force_blocking = seasonal_matrix_profile_brute_force_blocking(data, window_size, exclude, seasons);
-    printf("STOMP\n");
+    end_time = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    std::cout << "Brute force blocking execution time: " << duration.count() << " seconds" << std::endl;
+
+    start_time = std::chrono::high_resolution_clock::now();
     auto result_stomp = seasonal_matrix_profile_STOMP_blocking(data, window_size, exclude, seasons);
+    end_time = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    std::cout << "STOMP execution time: " << duration.count() << " seconds" << std::endl;
 
 }
 
 int main() {
   // testDistance();
   //  compareStumpy();
-  smp();
-  // testMatrixProfileComputationSpeed(100000, 64);
+  testMatrixProfileComputationSpeed(2000000, 64);
+  smp_computation_speed(2000000, 1000, 4, 64);
   // test_stompv2(1000, 1);
 
   return 0;
