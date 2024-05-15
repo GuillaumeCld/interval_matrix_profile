@@ -373,7 +373,6 @@ auto blockSTOMP_v2(std::vector<T> &time_series, const int window_size, const int
         for (int j = 0; j < n_sequence; ++j)
         {
             first_row[j] = dotProduct(view, std::span(&time_series[j], window_size));
-            ;
         }
         #pragma omp single
         {

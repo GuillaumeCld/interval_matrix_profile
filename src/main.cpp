@@ -8,6 +8,7 @@
 #include <fstream>
 #include <matrix_profile.hpp>
 #include <seasonal_matrix_profile.hpp>
+#include <interval_matrix_profile.hpp>
 #include <utils.hpp>
 
 

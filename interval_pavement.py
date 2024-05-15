@@ -14,6 +14,9 @@ list_ind = []
 for year in range(1979, 2024):
     list_ind.append(np.where(ts_date == np.datetime64(str(year) + "-01-01"))[0][0])
 
+with open("Data/periods_start_sst.txt", "w") as f:
+    for item in list_ind:
+        f.write(f"{item}\n")
 
 I = 90
 window_size = 14
