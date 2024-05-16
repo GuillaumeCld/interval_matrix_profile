@@ -28,8 +28,16 @@ auto inteval_matrix_profile_brute_force(std::vector<T> &time_series,
     for (int i_period = 0; i_period < n_periods_i; ++i_period)
     {
         const int i_start = period_starts[i_period];
-        const int i_end = std::min(period_starts[i_period + 1], n_sequence);
-
+        int tmp_end;
+        if (i_period == n_periods_i - 1)
+        {
+            tmp_end = n_sequence;
+        }
+        else
+        {
+            tmp_end = period_starts[i_period + 1];
+        }
+        const int i_end = std::min(tmp_end, n_sequence);
         // #pragma omp for
         for (int i = i_start; i < i_end; ++i)
         {
@@ -235,13 +243,12 @@ auto inteval_matrix_profile_STOMP(std::vector<T> &time_series,
 
 // TODO implement with brute force initialization instead of shifting
 
-
 template <typename T>
 auto inteval_matrix_profile_STOMP_bf(std::vector<T> &time_series,
-                                  const int window_size,
-                                  std::vector<int> const &period_starts,
-                                  const int interval_length,
-                                  const int exclude)
+                                     const int window_size,
+                                     std::vector<int> const &period_starts,
+                                     const int interval_length,
+                                     const int exclude)
 {
     const int n = time_series.size();
     const int n_sequence = n - window_size + 1;
@@ -304,19 +311,42 @@ auto inteval_matrix_profile_STOMP_bf(std::vector<T> &time_series,
                 }
             }
             std::span<T> initial_row;
+            std::vector<T> tmp(block_width, 0);
             if (metarow == 0)
             {
-                initial_row = std::span(&first_row[block_j], block_width);
+                if (block_j < 0)
+                {
+                    for (int j = half_interval - 1; j < block_width; ++j)
+                    {
+                        tmp[j] = first_row[j + 1 - half_interval];
+                    }
+                    initial_row = std::span(tmp.data(), block_width);
+                }
+                else
+                {
+                    initial_row = std::span(&first_row[block_j], block_width);
+                }
             }
             else
             {
-                auto tmp = std::vector<T>(block_width);
-                std::span<T> view = std::span(&time_series[block_i-1], window_size);
-                for (int j = 0; j < block_width; ++j)
+                std::span<T> view = std::span(&time_series[block_i - 1], window_size);
+
+                if (block_j < 0)
                 {
-                    tmp[j] = dotProduct(view, std::span(&time_series[block_j + j-1], window_size));
+                    for (int j = half_interval; j < block_width; ++j)
+                    {
+                        tmp[j] = dotProduct(view, std::span(&time_series[block_j + j - 1], window_size));
+                    }
+                    initial_row = std::span(tmp.data(), block_width);
                 }
-                initial_row = std::span(tmp.data(), block_width);
+                else
+                {
+                    for (int j = 0; j < block_width; ++j)
+                    {
+                        tmp[j] = dotProduct(view, std::span(&time_series[block_j + j - 1], window_size));
+                    }
+                    initial_row = std::span(tmp.data(), block_width);
+                }
             }
             block<T> block(n_sequence,
                            window_size,
@@ -329,12 +359,12 @@ auto inteval_matrix_profile_STOMP_bf(std::vector<T> &time_series,
                            first_row,
                            initial_row,
                            time_series);
+
             current_blocks[column] = std::move(block);
             current_blocks[column].STOMP();
             // retrieve the minimums per row
             block_min_pair_per_row[column] = current_blocks[column].get_local_min_rows();
         }
-
         // Compute the global minimums per row
         for (int i = 0; i < block_height; ++i)
         {

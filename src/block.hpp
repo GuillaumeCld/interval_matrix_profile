@@ -172,12 +172,12 @@ public:
     void print(std::ostream &out)
     {
         out << "Block " << " type " << _type << " i " << _global_i << " j " << _global_j << std::endl;
-        // out << "Initial row: ";
-        // for (int i = 0; i < _width; ++i)
-        // {
-        //     out << this->initial_row[i] << " ";
-        // }
-        // out << std::endl;
+        out << "Initial row: ";
+        for (int i = 0; i < _width; ++i)
+        {
+            out << this->initial_row[i] << " ";
+        }
+        out << std::endl;
         // out << "Row: ";
         // for (int i = 0; i < _width; ++i)
         // {
@@ -196,9 +196,9 @@ private:
     int _global_i;                          // i coordinate top left corner
     int _global_j;                          // j coordinate top left corner
     std::vector<T> row;                     // the row for the recurrence in the block
-    std::span<T> first_row;              // the first row of the distance matrix
+    std::span<T> first_row;                 // the first row of the distance matrix
     std::span<T> initial_row;               // the initial row for the recurrence
-    std::span<T> time_series;            // the time series
+    std::span<T> time_series;               // the time series
     std::vector<min_pair<T>> local_min_row; // the array of minimum per row in the block
 
     /**
@@ -232,7 +232,7 @@ private:
 
     /**
      * @brief Update the recurrence of the row and compute the minimum of the row.
-     * 
+     *
      * @param start The start index of the row.
      * @param end The end index of the row.
      * @param i The index of the row.
@@ -335,7 +335,7 @@ private:
             this->local_min_row[i] = {-1, std::numeric_limits<T>::max()};
         }
         int elem_per_row{1};
-        int current_start{_width-elem_per_row};
+        int current_start{_width - elem_per_row};
         for (int i = first_line; i < _height; ++i)
         {
             min_pair<T> min{-1, std::numeric_limits<T>::max()};
@@ -363,13 +363,25 @@ private:
         update_min(nb_left_elements, min, _global_i, 0);
 
         int global_j{_global_j + nb_left_elements + 1};
-        for (int j = 1; j < nb_right_elements; ++j)
+
+        if (_global_i == 0)
         {
-            const T prev_data{this->time_series[global_j - 1] - this->time_series[_global_i - 1]};
-            const T next_data{this->time_series[global_j + _m - 1] - this->time_series[_global_i + _m - 1]};
-            this->row[nb_left_elements + j] = this->initial_row[nb_left_elements + j] + (next_data * next_data - prev_data * prev_data);
-            update_min(nb_left_elements + j, min, _global_i, global_j);
-            ++global_j;
+            for (int j = 1; j < nb_right_elements; ++j)
+            {
+                this->row[nb_left_elements + j] = this->first_row[_global_i + j];
+                update_min(nb_left_elements + j, min, _global_i, j);
+            }
+        }
+        else
+        {
+            for (int j = 1; j < nb_right_elements; ++j)
+            {
+                const T prev_data{this->time_series[global_j - 1] - this->time_series[_global_i - 1]};
+                const T next_data{this->time_series[global_j + _m - 1] - this->time_series[_global_i + _m - 1]};
+                this->row[nb_left_elements + j] = this->initial_row[nb_left_elements + j] + (next_data * next_data - prev_data * prev_data);
+                update_min(nb_left_elements + j, min, _global_i, global_j);
+                ++global_j;
+            }
         }
         this->local_min_row[0] = min;
         // Compute the first truncated rows
@@ -379,7 +391,7 @@ private:
         // |---------|
         //
         int global_i{_global_i + 1};
-        int row_start{nb_left_elements-1};
+        int row_start{nb_left_elements - 1};
         for (int i = 1; i < nb_left_elements + 1; ++i)
         {
             min_pair<T> min{-1, std::numeric_limits<T>::max()};
@@ -413,7 +425,7 @@ private:
         }
         // Triangle part
         int elem_per_row{1};
-        int current_start{_width-elem_per_row};
+        int current_start{_width - elem_per_row};
         int global_i{_global_i + first_line};
         for (int i = first_line; i < first_line + _width; ++i)
         {
@@ -447,7 +459,7 @@ private:
         this->row[current_start] = this->first_row[_global_i];
         update_min(current_start, min, _global_i, 0);
 
-        int global_j{_global_j + current_start + 1}; 
+        int global_j{_global_j + current_start + 1};
         for (int j = current_start + 1; j < _width; ++j)
         {
             // Compute the elements to remove (prev) and the elements to add (next)
@@ -461,7 +473,7 @@ private:
         this->local_min_row[0] = min;
         ++elem_per_row;
         --current_start;
-        int global_i{_global_i+1};
+        int global_i{_global_i + 1};
         // Compute the rest of the quadrangle
         for (int i = 1; i < _height; ++i)
         {
