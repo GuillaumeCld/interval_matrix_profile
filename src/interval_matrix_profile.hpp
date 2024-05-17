@@ -155,15 +155,42 @@ auto inteval_matrix_profile_STOMP(std::vector<T> &time_series,
                     break;
                 }
             }
+            printf("Height width %d %d \n", block_height, period_width);
             std::span<T> initial_row;
+            std::vector<T> tmp(block_width, 0);
+
             if (metarow == 0)
             {
-                initial_row = std::span(&first_row[block_j], block_width);
+                if (block_j < 0)
+                {
+                    for (int j = half_interval - 1; j < block_width; ++j)
+                    {
+                        tmp[j] = first_row[j + 1 - half_interval];
+                    }
+                    initial_row = std::span(tmp.data(), block_width);
+                }
+                else
+                {
+                    initial_row = std::span(&first_row[block_j], block_width);
+                }
             }
             else
             {
-                const int previous_block = std::max(column - 1, 0);
-                initial_row = std::span(previous_blocks[previous_block].data(), block_width);
+                std::span<T> view = std::span(&time_series[block_i - 1], window_size);
+
+                if (block_j < 0)
+                {
+                    for (int j = half_interval; j < block_width; ++j)
+                    {
+                        tmp[j] = dotProduct(view, std::span(&time_series[block_j + j - 1], window_size));
+                    }
+                    initial_row = std::span(tmp.data(), block_width);
+                }
+                else
+                {
+                    const int previous_block = std::max(column - 1, 0);
+                    initial_row = std::span(previous_blocks[previous_block].data(), block_width);
+                }
             }
             block<T> block(n_sequence,
                            window_size,
@@ -202,15 +229,38 @@ auto inteval_matrix_profile_STOMP(std::vector<T> &time_series,
         }
         for (int column = 0; column < nb_blocks; ++column)
         {
-            if (block_height - period_width != 0)
+            if (column < metarows)
+            {
+                if (column == metarows - 1)
+                {
+                    block_width = std::min(interval_length, n_sequence - (period_starts[column] - half_interval));
+                    period_width = n + 1 - period_starts[column];
+                }
+                else
+                {
+                    block_width = interval_length;
+                    period_width = period_starts[column + 1] - period_starts[column];
+                }
+                block_j = period_starts[column] - half_interval;
+            }
+            else
+            {
+                block_j = n + 1 - half_interval;
+                period_width = block_height;
+                if (block_j >= n_sequence)
+                {
+                    break;
+                }
+            }
+            if (block_height != period_width)
             {
                 if (block_height < period_width)
                 {
                     const int i = block_i + block_height - 1;
                     const int first_j = block_j + block_height - 1;
-                    const int last_j = first_j + block_width;
+                    const int last_j = first_j + block_width - 1;
 
-                    auto const &tmp_row = current_blocks[column].get_row();
+                    auto tmp_row = current_blocks[column].get_row();
                     for (int j = 1; j < block_width; ++j)
                     {
                         previous_blocks[column][j - 1] = tmp_row[j];
@@ -219,6 +269,7 @@ auto inteval_matrix_profile_STOMP(std::vector<T> &time_series,
                 }
                 else if (block_height > period_width)
                 {
+                    printf(" (%d, %d) \n", metarow, column);
                     const int i = block_i + block_height - 1;
                     const int first_j = block_j + block_height - 1;
                     const int last_j = first_j + block_width;
@@ -240,8 +291,6 @@ auto inteval_matrix_profile_STOMP(std::vector<T> &time_series,
     }
     return std::make_tuple(matrix_profile, profile_index);
 }
-
-// TODO implement with brute force initialization instead of shifting
 
 template <typename T>
 auto inteval_matrix_profile_STOMP_bf(std::vector<T> &time_series,

@@ -7,4 +7,6 @@ set(CMAKE_BUILD_TYPE Release)
 
 add_subdirectory(src)
 add_subdirectory(tests)
+add_subdirectory(experiments)
+
 

@@ -344,8 +344,8 @@ auto smp_computation_speed(int vector_size, int period_size, int n_seasons, int 
 int main() {
   // testDistance();
   //  compareStumpy();
-  testMatrixProfileComputationSpeed(2000000, 64);
-  smp_computation_speed(2000000, 1000, 4, 64);
+  testMatrixProfileComputationSpeed(100000, 64);
+  // smp_computation_speed(2000000, 1000, 4, 64);
   // test_stompv2(1000, 1);
 
   return 0;

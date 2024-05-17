@@ -171,7 +171,7 @@ public:
 
     void print(std::ostream &out)
     {
-        out << "Block " << " type " << _type << " i " << _global_i << " j " << _global_j << std::endl;
+        out << "Block " << " type " << _type << " i " << _global_i << " j " << _global_j <<  " height " << _height << " width " << _width << std::endl;
         out << "Initial row: ";
         for (int i = 0; i < _width; ++i)
         {
@@ -227,7 +227,17 @@ private:
         const T prev_data{this->time_series[global_i - 1] - this->time_series[global_j - 1]};
         const T next_data{this->time_series[global_i + _m - 1] - this->time_series[global_j + _m - 1]};
         // Update the row following the recurrence
+        // const T old{this->row[j]};
         this->row[j] += (next_data * next_data - prev_data * prev_data);
+
+        // auto distance = dotProduct(std::span(&this->time_series[global_i], _m), std::span(&this->time_series[global_j], _m));
+        // auto exp_old = dotProduct(std::span(&this->time_series[global_i - 1], _m), std::span(&this->time_series[global_j - 1], _m));
+        // if (std::abs(this->row[j] - distance) > 1e-10)
+        // {
+        //     printf(" STOMP row[%d] = %f with %f - %f + %f (%d,%d) expected %f and old %f block type %d and height %d with _global_i %d\n", j, this->row[j], old, prev_data * prev_data, next_data * next_data, global_i, global_j, distance, exp_old, _type, _height, _global_i);
+        //     print(std::cout);
+        //     exit(1);
+        // }
     }
 
     /**
@@ -284,6 +294,15 @@ private:
             // Update the row following the recurrence
             this->row[j] = this->initial_row[j] + (next_data * next_data - prev_data * prev_data);
             update_min(j, min, _global_i, global_j);
+
+            // auto distance = dotProduct(std::span(&this->time_series[_global_i], _m), std::span(&this->time_series[global_j], _m));
+            // auto exp_old = dotProduct(std::span(&this->time_series[_global_i - 1], _m), std::span(&this->time_series[global_j - 1], _m));
+            // if (std::abs(this->row[j] - distance) > 1e-10)
+            // {
+            //     printf("ISTOMP row[%d] = %f with %f - %f + %f (%d,%d) expected %f with old %f block type %d\n", j, this->row[j], this->initial_row[j], prev_data * prev_data, next_data * next_data, _global_i, global_j, distance, exp_old, _type);
+            //     print(std::cout);
+            //     exit(1);
+            // }
             ++global_j;
         }
         this->local_min_row[0] = min;
