@@ -26,28 +26,27 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size) {
         data.push_back(dis(gen));
     }
     // Measure computation time
-    auto start_time = std::chrono::high_resolution_clock::now();
-    auto mpOutput = computeMatrixProfileBruteForce(data, window_size);
-    auto matrix_profile = std::get<0>(mpOutput);
-    auto end_time = std::chrono::high_resolution_clock::now();
+    // auto start_time = std::chrono::high_resolution_clock::now();
+    // auto mpOutput = computeMatrixProfileBruteForce(data, window_size);
+    // auto matrix_profile = std::get<0>(mpOutput);
+    // auto end_time = std::chrono::high_resolution_clock::now();
     
-    // // Compute duration
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-
-    // // Output results
-    std::cout << "Brute Force " << vector_size << " " << window_size;
-    std::cout << " " << duration.count() << std::endl;
-
-
-    // // Measure computation time
-    // start_time = std::chrono::high_resolution_clock::now();
-    // mpOutput = blockSTOMP_v2(data, window_size, 5000, 5000);
-    // auto matrix_profile_blockstomp = std::get<0>(mpOutput);
-    // end_time = std::chrono::high_resolution_clock::now();
-    // // Compute duration
-    // duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
-    // std::cout << "STOMP " << vector_size << " " << window_size;
+    // // // Compute duration
+    // auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    
+    // // // Output results
+    // std::cout << "Brute Force " << vector_size << " " << window_size;
     // std::cout << " " << duration.count() << std::endl;
+
+    // Measure computation time
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto mpOutput = blockSTOMP_v2(data, window_size, 5000, 5000);
+    auto matrix_profile_blockstomp = std::get<0>(mpOutput);
+    auto end_time = std::chrono::high_resolution_clock::now();
+    // Compute duration
+    auto duration =  std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    std::cout << "STOMP " << vector_size << " " << window_size;
+    std::cout << " " << duration.count() << std::endl;
 
 }
 
