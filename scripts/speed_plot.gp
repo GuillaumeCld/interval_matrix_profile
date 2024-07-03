@@ -1,6 +1,6 @@
 # Set the terminal and output file
 set terminal pngcairo size 800,600 enhanced font 'Arial,12'
-set output 'bf.png'
+set output 'bf_100K.png'
 
 # Set the data file separator
 set datafile separator ","
@@ -26,5 +26,5 @@ set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 ps 1.5   # Blue for execution t
 set style line 2 lc rgb '#dd181f' lt 1 lw 2 pt 5 ps 1.5   # Red for speedup
 
 # Plot the data
-plot "bf_speedup.txt" using 1:2 with linespoints linestyle 1 title "Execution Time", \
+plot "bf_100k_speedup.txt" using 1:2 with linespoints linestyle 1 title "Execution Time", \
      "" using 1:3 with linespoints linestyle 2 title "Speedup" axes x1y2

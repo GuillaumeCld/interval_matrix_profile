@@ -10,7 +10,7 @@
 #include "block.hpp"
 
 template <typename T>
-auto inteval_matrix_profile_brute_force(std::vector<T> &time_series,
+auto interval_matrix_profile_brute_force(std::vector<T> &time_series,
                                         const int window_size,
                                         std::vector<int> const &period_starts,
                                         const int interval_length,
@@ -89,7 +89,7 @@ auto inteval_matrix_profile_brute_force(std::vector<T> &time_series,
 }
 
 template <typename T>
-auto inteval_matrix_profile_STOMP(std::vector<T> &time_series,
+auto interval_matrix_profile_STOMP(std::vector<T> &time_series,
                                   const int window_size,
                                   std::vector<int> const &period_starts,
                                   const int interval_length,
@@ -293,7 +293,7 @@ auto inteval_matrix_profile_STOMP(std::vector<T> &time_series,
 }
 
 template <typename T>
-auto inteval_matrix_profile_STOMP_bf(std::vector<T> &time_series,
+auto interval_matrix_profile_STOMP_bf(std::vector<T> &time_series,
                                      const int window_size,
                                      std::vector<int> const &period_starts,
                                      const int interval_length,

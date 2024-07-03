@@ -15,10 +15,10 @@ TEST(IntervalMatrixProfileTest, SameResult_bf_stomp_sst)
     readFile<int>("../Data/periods_start_sst.txt", period_starts, "%d"); 
 
     // Calculate the matrix profile using the three methods
-    auto result_brute_force = inteval_matrix_profile_brute_force(data, window_size, period_starts, interval_length, exclude);
+    auto result_brute_force = interval_matrix_profile_brute_force(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_bf = std::get<0>(result_brute_force);
     std::vector<int> index_profile_bf = std::get<1>(result_brute_force);
-    auto result_stomp = inteval_matrix_profile_STOMP_bf(data, window_size, period_starts, interval_length, exclude);
+    auto result_stomp = interval_matrix_profile_STOMP_bf(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_stomp = std::get<0>(result_stomp);
     std::vector<int> index_profile_stomp = std::get<1>(result_stomp);
 

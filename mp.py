@@ -13,7 +13,7 @@ def build_four_seasons_idx(ts_date, start_year, end_year, seasons_date):
 
     
     for i,year_int in enumerate(years):
-       
+        print(year_int)
         dyear = str(year_int) + "-"
         
         
@@ -40,6 +40,7 @@ def build_four_seasons_idx(ts_date, start_year, end_year, seasons_date):
             seasons[3][2 + 2*i+1] = np.where(ts_date == np.datetime64(dyear+'12-31'))[0][0]
 
         else :
+            
             seasons[3][2 + 2*i] = np.where(ts_date == np.datetime64(dyear+winter))[0][0]
             seasons[3][2 + 2*i+1] = np.where(ts_date == np.datetime64(nyear+spring))[0][0]
                 
@@ -84,3 +85,33 @@ smp_ind = np.load("Data/smp_ind_sst.npy")
 with open("Data/smp_ind_sst.txt", "w") as file:
     for elem in smp_ind:
         file.write(f"{elem}\n")
+
+
+
+sst = np.load("Data/SST/mediterrean_sst.npy")
+with open("Data/SST/medi.txt", "w") as file:
+    for elem in sst:
+        file.write(f"{elem}\n")
+
+
+ts_date = np.load("Data/SST/mediterranean_ts_date.npy").astype('datetime64[D]')
+start_year = np.datetime64(ts_date[0], 'Y').astype(int) + 1970
+end_year = np.datetime64(ts_date[-1], 'Y').astype(int) + 1970
+spring = '03-21'
+summer = '06-21'
+automn = '09-21'
+winter = '12-21'
+four_seaons = [spring, summer, automn, winter]
+seasons = build_four_seasons_idx(ts_date,  start_year, end_year, four_seaons)
+
+for i in range(4):
+    with open(f"Data/SST/seasons_sst_{i}.txt", "w") as file:
+        for elem in seasons[i]:
+            file.write(f"{elem}\n")
+list_ind = []
+for year in range(start_year, end_year+1):
+    list_ind.append(np.where(ts_date == np.datetime64(str(year) + "-01-01"))[0][0])
+
+with open("Data/SST/periods_start_sst.txt", "w") as f:
+    for item in list_ind:
+        f.write(f"{item}\n")
