@@ -1,6 +1,7 @@
 # Go to the root of the repository
 
 echo $(pwd)
+topo --output-format png -v --no-io > cpu.png
 cd Devel/MP_CPP/
 # Build the project
 if ![ -d build ]; then
