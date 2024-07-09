@@ -13,7 +13,7 @@
  * @param exclude_zone, the size of the exclusion zone
  * @return bool, true if the value is inside the exclusion zone
  */
-auto inline inside_exclusion_zone(std::vector<int> &k_index, const int i, const int exclude_zone) -> bool
+inline auto inside_exclusion_zone(std::vector<int> &k_index, const int i, const int exclude_zone) -> bool
 {
     for (int j = 0; j < k_index.size(); ++j)
     {
@@ -96,7 +96,7 @@ auto k_nn_heap(std::vector<T> &time_series, const int k, const int exclude_zone)
     std::vector<value_t> sorted_values(bound);
     for (int i = 0; i < bound; ++i)
     {
-        sorted_values[bound-1-i] = max_heap.top();
+        sorted_values[bound - 1 - i] = max_heap.top();
         max_heap.pop();
     }
 
@@ -109,7 +109,7 @@ auto k_nn_heap(std::vector<T> &time_series, const int k, const int exclude_zone)
     k_min.push_back(sorted_values[0].first);
     k_index.push_back(sorted_values[0].second);
 
-    for (int i = 1; i < bound; ++i)
+    for (int i = 1; i < k; ++i)
     {
         const value_t &current = sorted_values[i];
         if (not inside_exclusion_zone(k_index, current.second, exclude_zone))
@@ -117,6 +117,41 @@ auto k_nn_heap(std::vector<T> &time_series, const int k, const int exclude_zone)
             k_min.push_back(current.first);
             k_index.push_back(current.second);
         }
+    }
+    return std::make_pair(k_min, k_index);
+}
+
+template <typename T, typename HeapType, typename PairType>
+inline auto extract_k_min_from_heap(HeapType max_heap, const int k, const int exclude_zone) -> std::pair<std::vector<T>, std::vector<int>>
+{
+    const int bound = max_heap.size();
+    std::vector<PairType> sorted_values(bound);
+    for (int i = 0; i < bound; ++i)
+    {
+        sorted_values[bound - 1 - i] = max_heap.top();
+        max_heap.pop();
+    }
+
+    // Find the k smallest values
+    std::vector<T> k_min;
+    k_min.reserve(k);
+    std::vector<int> k_index;
+    k_index.reserve(k);
+
+    k_min.push_back(sorted_values[0].value);
+    k_index.push_back(sorted_values[0].index);
+    int size = 1;
+    int i = 1;
+    while (i < bound and size < k)
+    {
+        const PairType &current = sorted_values[i];
+        if (not inside_exclusion_zone(k_index, current.index, exclude_zone))
+        {
+            k_min.push_back(current.value);
+            k_index.push_back(current.index);
+            ++size;
+        }
+        ++i;
     }
     return std::make_pair(k_min, k_index);
 }

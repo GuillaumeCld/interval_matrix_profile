@@ -22,9 +22,8 @@ add_executable(
 target_link_libraries(
     tests
     GTest::gtest_main
-    ${OpenMP_CXX_FLAGS}
+    OpenMP::OpenMP_CXX
 )
-target_compile_options(tests PRIVATE ${OpenMP_CXX_FLAGS})
 
 include(GoogleTest)
 gtest_discover_tests(tests)

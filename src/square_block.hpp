@@ -44,7 +44,7 @@ public:
                  const int j,
                  const int width,
                  const int height,
-                 std::vector<min_pair<T>> in_local_min_row,
+                 std::vector<min_pair<T>> & in_local_min_row,
                  std::span<T> in_time_series)
         : _n(n),
           _m(m),

@@ -372,8 +372,9 @@ auto test_climate_series()
   std::vector<double> data;
   readFile<double>("../Data/SST/medi.txt", data, "%lf");
   // Define the window size, exclude value, and seasons
-  int window_size = 7;
-  int exclude = 4;
+  const int window_size = 7;
+  const int exclude = 7;
+  const int k = 3;
   const int n = data.size() - window_size + 1;
   std::vector<std::vector<std::pair<int, int>>> seasons;
   seasons.push_back(build_season_vector<double>("../Data/SST/seasons_sst_0.txt", n));
@@ -384,62 +385,78 @@ auto test_climate_series()
   std::vector<int> period_starts;
   readFile<int>("../Data/SST/periods_start_sst.txt", period_starts, "%d");
 
-  // Calculate the matrix profile using the three methods
+  // // Calculate the matrix profile using the three methods
+  // auto start_time = std::chrono::high_resolution_clock::now();
+  // auto result = seasonal_matrix_profile_brute_force(data, window_size, exclude, seasons);
+  // std::vector<double> smp_bf = std::get<0>(result);
+  // auto end_time = std::chrono::high_resolution_clock::now();
+  // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+  // std::cout << "SMP BF execution time: " << duration.count() << " ms" << std::endl;
+
+  // start_time = std::chrono::high_resolution_clock::now();
+  // result = seasonal_matrix_profile_STOMP_blocking(data, window_size, exclude, seasons);
+  // std::vector<double> smp_stomp = std::get<0>(result);
+  // end_time = std::chrono::high_resolution_clock::now();
+  // duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+  // std::cout << "SMP STOMP execution time: " << duration.count() << " ms" << std::endl;
+
+  // start_time = std::chrono::high_resolution_clock::now();
+  // result = interval_matrix_profile_brute_force(data, window_size, period_starts, interval_length, exclude);
+  // std::vector<double> imp_bf = std::get<0>(result);
+  // end_time = std::chrono::high_resolution_clock::now();
+  // duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+  // std::cout << "IMP BF execution time: " << duration.count() << " ms" << std::endl;
+  
+  // start_time = std::chrono::high_resolution_clock::now();
+  // result = interval_matrix_profile_STOMP_bf(data, window_size, period_starts, interval_length, exclude);
+  // std::vector<double> imp_stomp = std::get<0>(result);
+  // end_time = std::chrono::high_resolution_clock::now();
+  // duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+  // std::cout << "IMP STOMP execution time: " << duration.count() << " ms" << std::endl;
+
   auto start_time = std::chrono::high_resolution_clock::now();
-  auto result = seasonal_matrix_profile_brute_force(data, window_size, exclude, seasons);
-  std::vector<double> smp_bf = std::get<0>(result);
+  auto result = interval_matrix_profile_STOMP_ep(data, window_size, period_starts, interval_length, exclude);
+  std::vector<double> imp_stomp_ep = std::get<0>(result);
   auto end_time = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-  std::cout << "SMP BF execution time: " << duration.count() << " ms" << std::endl;
+  std::cout << "IMP STOMP 2 execution time: " << duration.count() << " ms" << std::endl;
 
   start_time = std::chrono::high_resolution_clock::now();
-  result = seasonal_matrix_profile_STOMP_blocking(data, window_size, exclude, seasons);
-  std::vector<double> smp_stomp = std::get<0>(result);
+  result = interval_matrix_profile_STOMP_kNN(data, window_size, period_starts, interval_length, exclude, k);
+  std::vector<double> imp_stomp_kNN = std::get<0>(result);
   end_time = std::chrono::high_resolution_clock::now();
   duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-  std::cout << "SMP STOMP execution time: " << duration.count() << " ms" << std::endl;
+  std::cout << "IMP STOMP kNN execution time: " << duration.count() << " ms" << std::endl;
 
-  start_time = std::chrono::high_resolution_clock::now();
-  result = interval_matrix_profile_brute_force(data, window_size, period_starts, interval_length, exclude);
-  std::vector<double> imp_bf = std::get<0>(result);
-  end_time = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-  std::cout << "IMP BF execution time: " << duration.count() << " ms" << std::endl;
-  start_time = std::chrono::high_resolution_clock::now();
+  // start_time = std::chrono::high_resolution_clock::now();
+  // result = computeMatrixProfileBruteForce(data, window_size);
+  // std::vector<double> mp_bf = std::get<0>(result);
+  // end_time = std::chrono::high_resolution_clock::now();
+  // duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+  // std::cout << "MP BF execution time: " << duration.count() << " ms" << std::endl;
 
-  result = interval_matrix_profile_STOMP_bf(data, window_size, period_starts, interval_length, exclude);
-  std::vector<double> imp_stomp = std::get<0>(result);
-  end_time = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-  std::cout << "IMP STOMP execution time: " << duration.count() << " ms" << std::endl;
+  // start_time = std::chrono::high_resolution_clock::now();
+  // result = blockSTOMP_v2(data, window_size, 5000, 5000);
+  // std::vector<double> mp_stomp = std::get<0>(result);
+  // end_time = std::chrono::high_resolution_clock::now();
+  // duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+  // std::cout << "MP STOMP execution time: " << duration.count() << " ms" << std::endl;
 
-  start_time = std::chrono::high_resolution_clock::now();
-  result = computeMatrixProfileBruteForce(data, window_size);
-  std::vector<double> mp_bf = std::get<0>(result);
-  end_time = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-  std::cout << "MP BF execution time: " << duration.count() << " ms" << std::endl;
-
-  start_time = std::chrono::high_resolution_clock::now();
-  result = blockSTOMP_v2(data, window_size, 5000, 5000);
-  std::vector<double> mp_stomp = std::get<0>(result);
-  end_time = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-  std::cout << "MP STOMP execution time: " << duration.count() << " ms" << std::endl;
-
-  write_vector_to_file("../Data/SST/mp_bf.txt", mp_bf);
-  write_vector_to_file("../Data/SST/mp_stomp.txt", mp_stomp);
-  write_vector_to_file("../Data/SST/smp_bf.txt", smp_bf);
-  write_vector_to_file("../Data/SST/smp_stomp.txt", smp_stomp);
-  write_vector_to_file("../Data/SST/imp_bf.txt", imp_bf);
-  write_vector_to_file("../Data/SST/imp_stomp.txt", imp_stomp);
+  // write_vector_to_file("../Data/SST/mp_bf.txt", mp_bf);
+  // write_vector_to_file("../Data/SST/mp_stomp.txt", mp_stomp);
+  // write_vector_to_file("../Data/SST/smp_bf.txt", smp_bf);
+  // write_vector_to_file("../Data/SST/smp_stomp.txt", smp_stomp);
+  // write_vector_to_file("../Data/SST/imp_bf.txt", imp_bf);
+  // write_vector_to_file("../Data/SST/imp_stomp.txt", imp_stomp);
+  write_vector_to_file("../Data/SST/imp_stomp_ep.txt", imp_stomp_ep);
+  write_vector_to_file("../Data/SST/imp_stomp_kNN.txt", imp_stomp_kNN);
 }
 
 int main()
 {
   // testDistance();
   //  compareStumpy();
-  // testMatrixProfileComputationSpeed(100000, 64);
+  // testMatrixProfileComputationSpeed(20000, 7);
   // smp_computation_speed(2000000, 1000, 4, 64);
   // test_stompv2(1000, 1);
   test_climate_series();

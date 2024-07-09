@@ -3,9 +3,9 @@ import matplotlib.patches as patches
 import numpy as np
 
 
-n = 1000
+n = 500
 width  = 50
-height = 30
+height = 40
 
 fig = plt.figure(figsize=(width, height))
 ax = fig.add_subplot(111, aspect='equal')

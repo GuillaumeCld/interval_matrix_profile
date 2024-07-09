@@ -7,6 +7,5 @@ add_executable(
 )
 target_link_libraries(
     experiments
-    ${OpenMP_CXX_FLAGS}
+    OpenMP::OpenMP_CXX
 )
-target_compile_options(experiments PRIVATE ${OpenMP_CXX_FLAGS})

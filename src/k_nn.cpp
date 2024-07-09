@@ -14,9 +14,9 @@ int main(int argc, char const *argv[])
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0, 1000); // Random numbers between 0 and 1
 
-    const int size = 1000000;
-    const int k = 5;
-    const int exclude_zone = 15;
+    const int size = 700000;
+    const int k = 10;
+    const int exclude_zone = 300;
 
     for (int i = 0; i < size; ++i)
     {

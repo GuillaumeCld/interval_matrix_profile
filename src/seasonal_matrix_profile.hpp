@@ -31,14 +31,14 @@ auto seasonal_matrix_profile_brute_force(std::vector<T> &data,
     std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
     std::vector<int> profile_index(n_sequence, 0);
 
-    #pragma omp parallel shared(data, matrix_profile, profile_index)
+#pragma omp parallel shared(data, matrix_profile, profile_index)
     for (auto const &season : seasons)
     {
         for (auto const &pair_row : season)
         {
             const int start_row{pair_row.first};
             const int end_row{pair_row.second};
-            #pragma omp for
+#pragma omp for
             for (int i = start_row; i < end_row; ++i)
             {
                 T min{std::numeric_limits<T>::max()};
@@ -89,19 +89,19 @@ auto seasonal_matrix_profile_brute_force_blocking(std::vector<T> &data,
     const int n_sequence = data.size() - window_size + 1;
     std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
     std::vector<int> profile_index(n_sequence, 0);
-    #pragma omp parallel default(none) \
-        shared(data, matrix_profile, profile_index, n_sequence, window_size, exclude, seasons)
-    #pragma omp single
+#pragma omp parallel default(none) \
+    shared(data, matrix_profile, profile_index, n_sequence, window_size, exclude, seasons)
+#pragma omp single
     {
 
         for (auto const &season : seasons)
         {
             for (auto const &pair_row : season)
             {
-                #pragma omp task default(none)                                                    \
-                    shared(data, n_sequence, window_size, exclude, matrix_profile, profile_index) \
-                    firstprivate(season, pair_row) \
-                    untied
+#pragma omp task default(none)                                                    \
+    shared(data, n_sequence, window_size, exclude, matrix_profile, profile_index) \
+    firstprivate(season, pair_row)                                                \
+    untied
                 {
                     const int start_row{pair_row.first};
                     const int end_row{pair_row.second};
@@ -163,9 +163,9 @@ auto seasonal_matrix_profile_STOMP_blocking(std::vector<T> &data,
     std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
     std::vector<int> profile_index(n_sequence, 0);
 
-#pragma omp parallel default(none) \
+    #pragma omp parallel default(none) \
     shared(data, matrix_profile, profile_index, n_sequence, window_size, exclude, seasons)
-#pragma omp single
+    #pragma omp single
     {
         for (const auto &season : seasons)
         {
@@ -173,10 +173,10 @@ auto seasonal_matrix_profile_STOMP_blocking(std::vector<T> &data,
             for (const auto &pair_row : season)
             {
 
-#pragma omp task default(none)                                                    \
-    shared(data, n_sequence, window_size, exclude, matrix_profile, profile_index) \
-    firstprivate(season, pair_row)                                                \
-    untied
+                #pragma omp task default(none)                                                    \
+                shared(data, n_sequence, window_size, exclude, matrix_profile, profile_index) \
+                firstprivate(season, pair_row)                                                \
+                untied
                 {
                     const int start_row{pair_row.first};
                     const int end_row{pair_row.second};

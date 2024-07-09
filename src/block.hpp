@@ -32,8 +32,7 @@ inline min_pair<T> min_pair_min2(min_pair<T> const &a, min_pair<T> const &b)
 #pragma omp declare reduction(min_pair_min : min_pair<double> : omp_out = min_pair_min2(omp_out, omp_in)) \
     initializer(omp_priv = {-1, DBL_MAX})
 
-// #pragma omp declare reduction(min_pair_min : min_pair<float> : omp_out = min_pair_min2(omp_out, omp_in)) \
-//     initializer(omp_priv = {-1, FLT_MAX})
+
 /**
  * @file block.hpp
  */
@@ -72,7 +71,7 @@ public:
           initial_row(in_initial_row),
           time_series(in_time_series)
     {
-        this->local_min_row.resize(height);
+        this->local_min_row.resize(height, {-1, std::numeric_limits<T>::max()});
         this->row.resize(width);
         // Case parallelogram truncated on the left
         if (j < 0) [[unlikely]]
@@ -129,6 +128,73 @@ public:
             _type = PARALLELOGRAM;
         }
     }
+
+    block(const int n,
+          const int m,
+          const int exclude,
+          const int i,
+          const int j,
+          const int ID,
+          const int width,
+          const int height,
+          std::span<T> const in_first_row,
+          std::span<T> const in_initial_row,
+          std::span<T> const in_time_series,
+          std::vector<min_pair<T>>& in_local_min_row)
+        : _n(n),
+          _m(m),
+          _exclude(exclude),
+          _global_i(i),
+          _global_j(j),
+          ID(ID),
+          _width(width),
+          _height(height),
+          first_row(in_first_row),
+          initial_row(in_initial_row),
+          time_series(in_time_series),
+          local_min_row(in_local_min_row)
+    {
+        // for (auto &min : local_min_row)
+        // {
+        //    std::cout << min.index << ", " << min.value << "  ";
+        // }
+        // std::cout << std::endl;
+        this->row.resize(width);
+        // Case parallelogram truncated on the left
+        if (j < 0) [[unlikely]]
+        {
+            if (j + _width <= 0 and j + _height <= 0)
+            {
+                STOMP_method = &block<T>::STOMP_triangle;
+                _type = TRIANGLE;
+            }
+            else if (j + _width > 0 and j + _height <= 0)
+            {
+                STOMP_method = &block<T>::STOMP_quadrangle_with_initial_recurrence;
+                _type = QUADRANGLE_WITH_INITIAL_RECURRENCE;
+            }
+            else if (j + width <= 0 and j + height > 0)
+            {
+                STOMP_method = &block<T>::STOMP_quadrangle_without_initial_recurrence;
+                _type = QUADRANGLE_WITHOUT_INITIAL_RECURRENCE;
+            }
+            else if (j + _width > 0 and j + _height > 0)
+            {
+                STOMP_method = &block<T>::STOMP_polygon;
+                _type = POLYGON;
+            }
+        }
+        else if (j + _width + _height > n) [[unlikely]]
+        {
+            STOMP_method = &block<T>::STOMP_right_truncated_parallelogram;
+            _type = RIGHT_TRUNCATED_PARALLELOGRAM;
+        }
+        else [[likely]]
+        {
+            STOMP_method = &block<T>::STOMP_parallelogram;
+            _type = PARALLELOGRAM;
+        }
+    }
     /**
      * @brief Destructor
      */
@@ -171,7 +237,7 @@ public:
 
     void print(std::ostream &out)
     {
-        out << "Block " << " type " << _type << " i " << _global_i << " j " << _global_j <<  " height " << _height << " width " << _width << std::endl;
+        out << "Block " << " type " << _type << " i " << _global_i << " j " << _global_j << " height " << _height << " width " << _width << std::endl;
         out << "Initial row: ";
         for (int i = 0; i < _width; ++i)
         {
@@ -227,17 +293,7 @@ private:
         const T prev_data{this->time_series[global_i - 1] - this->time_series[global_j - 1]};
         const T next_data{this->time_series[global_i + _m - 1] - this->time_series[global_j + _m - 1]};
         // Update the row following the recurrence
-        // const T old{this->row[j]};
         this->row[j] += (next_data * next_data - prev_data * prev_data);
-
-        // auto distance = dotProduct(std::span(&this->time_series[global_i], _m), std::span(&this->time_series[global_j], _m));
-        // auto exp_old = dotProduct(std::span(&this->time_series[global_i - 1], _m), std::span(&this->time_series[global_j - 1], _m));
-        // if (std::abs(this->row[j] - distance) > 1e-10)
-        // {
-        //     printf(" STOMP row[%d] = %f with %f - %f + %f (%d,%d) expected %f and old %f block type %d and height %d with _global_i %d\n", j, this->row[j], old, prev_data * prev_data, next_data * next_data, global_i, global_j, distance, exp_old, _type, _height, _global_i);
-        //     print(std::cout);
-        //     exit(1);
-        // }
     }
 
     /**
@@ -294,15 +350,6 @@ private:
             // Update the row following the recurrence
             this->row[j] = this->initial_row[j] + (next_data * next_data - prev_data * prev_data);
             update_min(j, min, _global_i, global_j);
-
-            // auto distance = dotProduct(std::span(&this->time_series[_global_i], _m), std::span(&this->time_series[global_j], _m));
-            // auto exp_old = dotProduct(std::span(&this->time_series[_global_i - 1], _m), std::span(&this->time_series[global_j - 1], _m));
-            // if (std::abs(this->row[j] - distance) > 1e-10)
-            // {
-            //     printf("ISTOMP row[%d] = %f with %f - %f + %f (%d,%d) expected %f with old %f block type %d\n", j, this->row[j], this->initial_row[j], prev_data * prev_data, next_data * next_data, _global_i, global_j, distance, exp_old, _type);
-            //     print(std::cout);
-            //     exit(1);
-            // }
             ++global_j;
         }
         this->local_min_row[0] = min;
@@ -313,7 +360,7 @@ private:
      */
     inline void STOMP_parallelogram()
     {
-        min_pair<T> min{-1, std::numeric_limits<T>::max()};
+        min_pair<T> min = this->local_min_row[0];
         // Initialize the first row
         if (_global_i == 0) [[unlikely]]
         {
@@ -337,7 +384,7 @@ private:
         }
         for (int i = 1; i < _height; ++i)
         {
-            min_pair<T> min{-1, std::numeric_limits<T>::max()};
+            min_pair<T> min = this->local_min_row[i];
             compute_row(0, _width, i, min);
         }
     }
@@ -348,17 +395,13 @@ private:
     inline void STOMP_triangle()
     {
         int first_line = -(_global_j + _width) + 1;
-        for (int i = 0; i < first_line; ++i)
-        {
-            // min_pair<T> min{-1, std::numeric_limits<T>::max()};
-            this->local_min_row[i] = {-1, std::numeric_limits<T>::max()};
-        }
         int elem_per_row{1};
         int current_start{_width - elem_per_row};
         for (int i = first_line; i < _height; ++i)
         {
-            min_pair<T> min{-1, std::numeric_limits<T>::max()};
+            min_pair<T> min = this->local_min_row[i];
             // Compute the first element of the row after the truncation
+
             this->row[current_start] = this->first_row[_global_i + i];
             update_min(current_start, min, _global_i + i, 0);
             // Compute the rest of the row
@@ -376,8 +419,9 @@ private:
 
         const int nb_left_elements{-_global_j};
         const int nb_right_elements{_width - nb_left_elements};
-        min_pair<T> min{-1, std::numeric_limits<T>::max()};
+        min_pair<T> min = this->local_min_row[0];
         // intialize the first row
+        // std::cout << "First row " << this->first_row[_global_i] << " at " << _global_i << std::endl << std::flush;
         this->row[nb_left_elements] = this->first_row[_global_i];
         update_min(nb_left_elements, min, _global_i, 0);
 
@@ -413,7 +457,7 @@ private:
         int row_start{nb_left_elements - 1};
         for (int i = 1; i < nb_left_elements + 1; ++i)
         {
-            min_pair<T> min{-1, std::numeric_limits<T>::max()};
+            min_pair<T> min = this->local_min_row[i];
             // Compute the first element of the row after the truncation
             this->row[row_start] = this->first_row[global_i];
             update_min(row_start, min, global_i, 0);
@@ -425,7 +469,7 @@ private:
         // Compute the rest of the parallelogram
         for (int i = nb_left_elements + 1; i < _height; ++i)
         {
-            min_pair<T> min{-1, std::numeric_limits<T>::max()};
+            min_pair<T> min = this->local_min_row[i];
             compute_row(0, _width, i, min);
         }
     }
@@ -437,18 +481,17 @@ private:
     {
         const int first_line{1 - (_global_j + _width)};
         // Part of the parallelogram on the left of the trucation
-        for (int i = 0; i < first_line; ++i)
-        {
-            // min_pair<T> min{-1, std::numeric_limits<T>::max()};
-            this->local_min_row[i] = {-1, std::numeric_limits<T>::max()};
-        }
+        // for (int i = 0; i < first_line; ++i)
+        // {
+        //     this->local_min_row[i] = this->local_min_row[0];
+        // }
         // Triangle part
         int elem_per_row{1};
         int current_start{_width - elem_per_row};
         int global_i{_global_i + first_line};
         for (int i = first_line; i < first_line + _width; ++i)
         {
-            min_pair<T> min{-1, std::numeric_limits<T>::max()};
+            min_pair<T> min = this->local_min_row[i];
             // First element of the row after the truncation
             this->row[current_start] = this->first_row[global_i];
             update_min(current_start, min, global_i, 0);
@@ -461,7 +504,7 @@ private:
         // Parallelogram part
         for (int i = first_line + _width; i < _height; ++i)
         {
-            min_pair<T> min{-1, std::numeric_limits<T>::max()};
+            min_pair<T> min = this->local_min_row[i];
             compute_row(0, _width, i, min);
         }
     }
@@ -473,7 +516,7 @@ private:
     {
         int elem_per_row{_width + _global_j};
         int current_start{_width - elem_per_row};
-        min_pair<T> min{-1, std::numeric_limits<T>::max()};
+        min_pair<T> min = this->local_min_row[0];
         // Initialize the first row
         this->row[current_start] = this->first_row[_global_i];
         update_min(current_start, min, _global_i, 0);
@@ -496,7 +539,7 @@ private:
         // Compute the rest of the quadrangle
         for (int i = 1; i < _height; ++i)
         {
-            min_pair<T> min{-1, std::numeric_limits<T>::max()};
+            min_pair<T> min = this->local_min_row[i];
             // Compute the first element of the row
             this->row[current_start] = this->first_row[global_i];
             update_min(current_start, min, global_i, 0);
@@ -515,7 +558,7 @@ private:
     {
         const int i_max{std::min(_n - _global_i, _height)};
         int j_max{std::min(_n - _global_j, _width)};
-        min_pair<T> min{-1, std::numeric_limits<T>::max()};
+        min_pair<T> min = this->local_min_row[0];
         if (_global_i == 0)
         {
             initialize_with_first_row(0, j_max, min);
@@ -526,13 +569,9 @@ private:
         }
         for (int i = 1; i < i_max; ++i)
         {
-            min_pair<T> min{-1, std::numeric_limits<T>::max()};
+            min_pair<T> min = this->local_min_row[i];
             j_max = std::min(_n - (_global_j + i), _width);
             compute_row(0, j_max, i, min);
-        }
-        for (int i = i_max; i < _height; ++i)
-        {
-            this->local_min_row[i] = {-1, std::numeric_limits<T>::max()};
         }
     }
 };
