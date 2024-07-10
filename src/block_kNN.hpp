@@ -45,7 +45,7 @@ public:
           _width(width),
           _height(height),
           _k(k),
-          _max_heap_size(k * (exclude + 2)),
+          _max_heap_size(k * (exclude * 2)),
           first_row(in_first_row),
           initial_row(in_initial_row),
           time_series(in_time_series),

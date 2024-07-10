@@ -5,6 +5,12 @@ add_executable(
     experiments
     computation_comparison.cpp
 )
+
+add_executable(
+    k_nn
+    k_nn_time.cpp
+)
+
 target_link_libraries(
     experiments
     OpenMP::OpenMP_CXX
