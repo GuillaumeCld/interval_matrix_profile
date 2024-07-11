@@ -28,9 +28,10 @@ echo "Threads,Time,Speedup" > "$output_file"
 while IFS=, read -r threads time; do
   # Calculate the speedup
   speedup=$(echo "scale=2; $base_time / $time" | bc)
+  efficiency=$(echo "scale=2; $speedup / $threads" | bc)
   
   # Write the results to the output file
-  echo "$threads,$time,$speedup" >> "$output_file"
+  echo "$threads,$time,$speedup,$efficiency" >> "$output_file"
 done < "$input_file"
 
 echo "Output written to $output_file"

@@ -38,9 +38,9 @@ TEST_F(MpTest, BruteForce_sst)
     readFile<double>("../Data/ts_sst.txt", ts, "%lf");
     std::vector<double> mp_ref;
     readFile<double>("../Data/mp_sst.txt", mp_ref, "%lf");
-    int window_size = 7;
-
-    auto mpOutput = computeMatrixProfileBruteForce(ts, window_size);
+    const int window_size = 7;
+    const int exclude = 2;
+    auto mpOutput = computeMatrixProfileBruteForce(ts, window_size, exclude);
     std::vector<double> matrix_profile_brute_force = std::get<0>(mpOutput);
     std::vector<int> index_profile_brute_force = std::get<1>(mpOutput);
 
@@ -57,8 +57,9 @@ TEST_F(MpTest, STOMP_sst)
     std::vector<double> mp_ref;
     readFile<double>("../Data/mp_sst.txt", mp_ref, "%lf");
     int window_size = 7;
+    const int exclude = 2;
 
-    auto mpOutput = blockSTOMP_v2(ts, window_size, 100, 100);
+    auto mpOutput = blockSTOMP_v2(ts, window_size, 100, 100, exclude);
     std::vector<double> matrix_profile = std::get<0>(mpOutput);
     std::vector<int> index_profile = std::get<1>(mpOutput);
 
@@ -82,8 +83,9 @@ TEST_F(MpTest, Block)
     }
 
     int window_size = 3;
+    const int exclude = 2;
 
-    auto BfMpOutput = computeMatrixProfileBruteForce(data, window_size);
+    auto BfMpOutput = computeMatrixProfileBruteForce(data, window_size, exclude);
     std::vector<double> matrix_profile_stomp_bf = std::get<0>(BfMpOutput);
     std::vector<int> matrix_profile_index_bf = std::get<1>(BfMpOutput);
 
@@ -117,8 +119,9 @@ TEST_F(MpTest, Block_v2)
     }
 
     int window_size = 3;
+    const int exclude = 2;
 
-    auto BfMpOutput = computeMatrixProfileBruteForce(data, window_size);
+    auto BfMpOutput = computeMatrixProfileBruteForce(data, window_size, exclude);
     std::vector<double> matrix_profile_stomp_bf = std::get<0>(BfMpOutput);
     std::vector<int> matrix_profile_index_bf = std::get<1>(BfMpOutput);
 
@@ -126,7 +129,7 @@ TEST_F(MpTest, Block_v2)
     {
         for (int block_height = 10; block_height <= 90; block_height += 10)
         {
-            auto BlockMpOutput = blockSTOMP_v2(data, window_size, block_width, block_height);
+            auto BlockMpOutput = blockSTOMP_v2(data, window_size, block_width, block_height, exclude);
             std::vector<double> matrix_profile_stomp_block = std::get<0>(BlockMpOutput);
             std::vector<int> matrix_profile_index_block = std::get<1>(BlockMpOutput);
             for (int i = 0; i < matrix_profile_stomp_bf.size(); ++i)
@@ -158,8 +161,10 @@ TEST_F(MpTest, Block_v3)
     }
 
     int window_size = 3;
+    const int exclude = 2;
 
-    auto BfMpOutput = computeMatrixProfileBruteForce(data, window_size);
+
+    auto BfMpOutput = computeMatrixProfileBruteForce(data, window_size, exclude);
     std::vector<double> matrix_profile_stomp_bf = std::get<0>(BfMpOutput);
     std::vector<int> matrix_profile_index_bf = std::get<1>(BfMpOutput);
 
@@ -199,8 +204,9 @@ TEST_F(MpTest, Block_v4)
     }
 
     int window_size = 3;
+    const int exclude = 2;
 
-    auto BfMpOutput = computeMatrixProfileBruteForce(data, window_size);
+    auto BfMpOutput = computeMatrixProfileBruteForce(data, window_size, exclude);
     std::vector<double> matrix_profile_stomp_bf = std::get<0>(BfMpOutput);
     std::vector<int> matrix_profile_index_bf = std::get<1>(BfMpOutput);
 
@@ -240,8 +246,9 @@ TEST_F(MpTest, Block_v5)
     }
 
     int window_size = 3;
+    const int exclude = 2   ;
 
-    auto BfMpOutput = computeMatrixProfileBruteForce(data, window_size);
+    auto BfMpOutput = computeMatrixProfileBruteForce(data, window_size, exclude);
     std::vector<double> matrix_profile_stomp_bf = std::get<0>(BfMpOutput);
     std::vector<int> matrix_profile_index_bf = std::get<1>(BfMpOutput);
 

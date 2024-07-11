@@ -33,8 +33,7 @@ auto interval_matrix_profile_brute_force(std::vector<T> &time_series,
     for (int i_period = 0; i_period < n_periods_i; ++i_period)
     {
         const int i_start = period_starts[i_period];
-        int tmp_end = (i_period == n_periods_i - 1) ? n_sequence : period_starts[i_period + 1];
-        const int i_end = std::min(tmp_end, n_sequence);
+        const int i_end = (i_period == n_periods_i - 1) ? n_sequence : period_starts[i_period + 1];
         for (int i = i_start; i < i_end; ++i)
         {
             const int place_in_period = std::min(i - i_start, 365);
@@ -44,12 +43,15 @@ auto interval_matrix_profile_brute_force(std::vector<T> &time_series,
 
             for (int j_period = 0; j_period < n_periods_i; ++j_period)
             {
-                if (j_period == n_periods_i - 1 and period_starts[j_period] + place_in_period > n_sequence)
-                {
-                    break;
-                }
+                // if (j_period == n_periods_i - 1 and period_starts[j_period] + place_in_period > n_sequence)
+                // {
+                //     if (i == 6203) std::cout << "Break " << i << ", " << place_in_period << std::endl;
+                //     break;
+                // }
                 const int j_start = std::max(period_starts[j_period] + place_in_period - half_interval, 0);
                 const int j_end = std::min(period_starts[j_period] + place_in_period + half_interval, n_sequence);
+                const int i_pos = i - i_start;
+
                 for (int j = j_start; j < j_end; ++j)
                 {
                     // Compute Euclidean distance for the current sequence
@@ -62,9 +64,10 @@ auto interval_matrix_profile_brute_force(std::vector<T> &time_series,
                 }
             }
             if (is_periodic)
-            {
-                const int j_start = n + 1 + i - half_interval;
-                const int j_end = std::min(n + 1 + i + half_interval, n_sequence);
+            {   
+                const int i_pos = i - i_start;
+                const int j_start = n + 1 + i_pos - half_interval;
+                const int j_end = std::min(n + 1 + i_pos + half_interval, n_sequence);
                 for (int j = j_start; j < j_end; ++j)
                 {
                     // Compute Euclidean distance for the current sequence
@@ -299,7 +302,7 @@ auto interval_matrix_profile_STOMP_bf(std::vector<T> &time_series,
     const int n_sequence = n - window_size + 1;
     const int metarows = period_starts.size();
     const int half_interval = interval_length / 2;
-
+    const int interval = (interval_length % 2 == 0) ? interval_length + 1 : interval_length;
     const int nb_blocks = (window_size > half_interval) ? metarows : metarows + 1;
     std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
     std::vector<int> profile_index(n_sequence, 0);
@@ -458,7 +461,7 @@ auto interval_matrix_profile_STOMP_ep(std::vector<T> &time_series,
 
 
     #pragma omp parallel default(none) \
-    shared(time_series, matrix_profile, profile_index, first_row, period_starts, std::cout) \
+    shared(time_series, matrix_profile, profile_index, first_row, period_starts) \
     firstprivate(n, n_sequence, metarows, interval_length, half_interval, nb_blocks, window_size, exclude) \
     private(block_height, block_width, block_i, block_j)
     {
@@ -520,7 +523,6 @@ auto interval_matrix_profile_STOMP_ep(std::vector<T> &time_series,
                 {
                     std::span<T> view = std::span(&time_series[block_i - 1], window_size);
                     int start_index = (block_j < 0) ? half_interval : 0;
-                    // std::cout << "Start index " << start_index << std::endl << std::flush;
                     for (int j = start_index; j < block_width; ++j)
                     {
                         tmp[j] = dotProduct(view, std::span(&time_series[block_j + j - 1], window_size));
@@ -611,11 +613,11 @@ auto interval_matrix_profile_STOMP_kNN(std::vector<T> &time_series,
             // Compute the height of the current block
             block_height= (metarow == metarows - 1) ? n_sequence - period_starts[metarow] : period_starts[metarow + 1] - period_starts[metarow];
             // Initialize the local minimum per rows
-            auto start_init = std::chrono::high_resolution_clock::now();
+            // auto start_init = std::chrono::high_resolution_clock::now();
             std::vector<heap_type> local_heap_row(block_height, heap_type(lesser));
-            auto end_init = std::chrono::high_resolution_clock::now();
-            auto duration_init = std::chrono::duration_cast<std::chrono::microseconds>(end_init - start_init).count();
-            cumulative_time_heaps += duration_init;
+            // auto end_init = std::chrono::high_resolution_clock::now();
+            // auto duration_init = std::chrono::duration_cast<std::chrono::microseconds>(end_init - start_init).count();
+            // cumulative_time_heaps += duration_init;
             // Iterate over the blocks
             for (int column = 0; column < nb_blocks; ++column)
             {
@@ -666,7 +668,7 @@ auto interval_matrix_profile_STOMP_kNN(std::vector<T> &time_series,
                 }
 
                 // Create the block
-                auto start_block = std::chrono::high_resolution_clock::now();
+                // auto start_block = std::chrono::high_resolution_clock::now();
                 block_kNN<T, heap_type> block(n_sequence,
                             window_size,
                             exclude,
@@ -680,19 +682,19 @@ auto interval_matrix_profile_STOMP_kNN(std::vector<T> &time_series,
                             initial_row,
                             time_series,
                             &local_heap_row);
-                auto end_block = std::chrono::high_resolution_clock::now();
-                auto duration_block = std::chrono::duration_cast<std::chrono::microseconds>(end_block - start_block).count();
-                cumulative_time_block += duration_block;
+                // auto end_block = std::chrono::high_resolution_clock::now();
+                // auto duration_block = std::chrono::duration_cast<std::chrono::microseconds>(end_block - start_block).count();
+                // cumulative_time_block += duration_block;
 
-                auto start_stomp = std::chrono::high_resolution_clock::now();
+                // auto start_stomp = std::chrono::high_resolution_clock::now();
                 block.STOMP();
-                auto end_stomp = std::chrono::high_resolution_clock::now();
-                auto duration_stomp = std::chrono::duration_cast<std::chrono::microseconds>(end_stomp - start_stomp).count();
-                cumulative_time_stomp += duration_stomp;
+                // auto end_stomp = std::chrono::high_resolution_clock::now();
+                // auto duration_stomp = std::chrono::duration_cast<std::chrono::microseconds>(end_stomp - start_stomp).count();
+                // cumulative_time_stomp += duration_stomp;
                 // local_heap_row = std::move(block.get_heap_per_row());
             }
             // Compute the global minimums per row and update the matrix profile/index
-            auto start = std::chrono::high_resolution_clock::now();
+            // auto start = std::chrono::high_resolution_clock::now();
             for (int i = 0; i < block_height; ++i)
             {
                 auto k_nn = extract_k_min_from_heap<T,heap_type,value_t>(local_heap_row.at(i), k, exclude);
@@ -703,14 +705,14 @@ auto interval_matrix_profile_STOMP_kNN(std::vector<T> &time_series,
                 matrix_profile[block_i + i] = std::sqrt(std::abs(k_nn_values.at(k-1)));
                 profile_index[block_i + i] = k_nn_indices.at(k-1);
             }
-            auto end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-            cumulative_time += duration;
+            // auto end = std::chrono::high_resolution_clock::now();
+            // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+            // cumulative_time += duration;
         }
-        std::cout << "Cumulative time heap init  " << cumulative_time_heaps / 1000.0 << " ms" << std::endl;
-        std::cout << "Cumulative time heap processing " << cumulative_time / 1000.0 << " ms" << std::endl;
-        std::cout << "Cumulative time block creation " << cumulative_time_block / 1000.0 << " ms" << std::endl;
-        std::cout << "Cumulative time stomp processing " << cumulative_time_stomp / 1000.0 << " ms" << std::endl;
+        // std::cout << "Cumulative time heap init  " << cumulative_time_heaps / 1000.0 << " ms" << std::endl;
+        // std::cout << "Cumulative time heap processing " << cumulative_time / 1000.0 << " ms" << std::endl;
+        // std::cout << "Cumulative time block creation " << cumulative_time_block / 1000.0 << " ms" << std::endl;
+        // std::cout << "Cumulative time stomp processing " << cumulative_time_stomp / 1000.0 << " ms" << std::endl;
     }
    
     return std::make_tuple(matrix_profile, profile_index);

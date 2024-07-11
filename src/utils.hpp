@@ -84,3 +84,16 @@ auto build_season_vector(const char *filename, const int n)
     fclose(file);
     return season;
 }
+
+template <class T>
+void write_vector_to_file(const std::string& filename, const std::vector<T>& vec) {
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return;
+    }
+    for (const auto& value : vec) {
+        file << value << "\n";
+    }
+    file.close();
+}

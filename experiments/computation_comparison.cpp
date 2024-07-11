@@ -40,8 +40,9 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size)
     // std::cout << " " << duration.count() << std::endl;
 
     // Measure computation time
+    const int exclude = window_size / 2;
     auto start_time = std::chrono::high_resolution_clock::now();
-    auto mpOutput = blockSTOMP_v2(data, window_size, 5000, 5000);
+    auto mpOutput = blockSTOMP_v2(data, window_size, 5000, 5000, exclude);
     auto matrix_profile_blockstomp = std::get<0>(mpOutput);
     auto end_time = std::chrono::high_resolution_clock::now();
     // Compute duration
@@ -54,6 +55,8 @@ void compute_bf_n( int window_size)
 {
     // Generate random vector
     std::vector<int> sizes = {2<<16, 2<<17, 2<<18, 2<<19, 2<<20};
+    const int exclude = window_size / 2;
+
     for (auto const &vector_size: sizes ){
         std::vector<value_type> data;
         std::random_device rd;
@@ -66,7 +69,7 @@ void compute_bf_n( int window_size)
         }
         // Measure computation time
         auto start_time = std::chrono::high_resolution_clock::now();
-        auto mpOutput = computeMatrixProfileBruteForce(data, window_size);
+        auto mpOutput = computeMatrixProfileBruteForce(data, window_size, exclude);
         auto matrix_profile = std::get<0>(mpOutput);
         auto end_time = std::chrono::high_resolution_clock::now();
 
@@ -81,7 +84,7 @@ void compute_bf_n( int window_size)
 void compute_stomp_n( int window_size)
 {
     // Generate random vector
-    std::vector<int> sizes = { 2<<18, 2<<19, 2<<20};
+    std::vector<int> sizes = {2<<16, 2<<17, 2<<18, 2<<19, 2<<20};
     for (auto const &vector_size: sizes ){
         std::vector<value_type> data;
         std::random_device rd;
@@ -92,9 +95,12 @@ void compute_stomp_n( int window_size)
         {
             data.push_back(dis(gen));
         }
+        const int exclude = window_size / 2;
+
         // Measure computation time
+        std::cout << "Starting " << std::endl;
         auto start_time = std::chrono::high_resolution_clock::now();
-        auto mpOutput = blockSTOMP_v2(data, window_size, 10000, 10000);
+        auto mpOutput = blockSTOMP_v2(data, window_size, 10000, 10000, exclude);
         auto matrix_profile = std::get<0>(mpOutput);
         auto end_time = std::chrono::high_resolution_clock::now();
 
@@ -127,6 +133,7 @@ void block_dims(int vector_size, int window_size)
         std::cerr << "Error opening file for writing." << std::endl;
         return;
     }
+    const int exclude = window_size / 2;
 
     // Loop over different block widths and heights
     for (int block_height = 500; block_height <= 5000; block_height += 500)
@@ -135,7 +142,7 @@ void block_dims(int vector_size, int window_size)
         {
             // std::cout << "Block Width: " << block_width << ", Block Height: " << block_height << std::endl;
             auto start_time = std::chrono::high_resolution_clock::now();
-            auto mpOutput = blockSTOMP_v2(data, window_size, block_width, block_height);
+            auto mpOutput = blockSTOMP_v2(data, window_size, block_width, block_height, exclude);
             auto end_time = std::chrono::high_resolution_clock::now();
 
             // Compute duration
@@ -168,9 +175,9 @@ int main(int argc, char **argv)
     int vector_size = std::stoi(argv[1]);
     int window_size = std::stoi(argv[2]);
 
-    testMatrixProfileComputationSpeed(vector_size, window_size);
+    // testMatrixProfileComputationSpeed(vector_size, window_size);
     // block_dims(vector_size, window_size);
-    // compute_stomp_n(window_size);   
+    compute_stomp_n(window_size);   
     // compute_bf_n(window_size);
 
     return 0;

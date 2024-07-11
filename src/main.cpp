@@ -47,11 +47,11 @@ void compareStumpy()
   readFile<double>("../Data/mp_sst.txt", mp_ref, "%lf");
   int window_size = 7;
 
-std:
   double norm_ref = vector_norm(mp_ref);
+  const int exclude = window_size / 2;
 
   printf("Brute Force\n");
-  auto mpOutput = computeMatrixProfileBruteForce(ts, window_size);
+  auto mpOutput = computeMatrixProfileBruteForce(ts, window_size, exclude);
   std::vector<double> matrix_profile_brute_force = std::get<0>(mpOutput);
   std::vector<int> index_profile_brute_force = std::get<1>(mpOutput);
 
@@ -163,8 +163,9 @@ std:
 // Function to test computation speed of matrix profile
 void testMatrixProfileComputationSpeed(int vector_size, int window_size)
 {
+  const int exclude = window_size / 2;
   // Generate random vector
-
+  std::cout<< "Vector size " << vector_size << std::endl;
   std::vector<value_type> data;
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -180,17 +181,17 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size)
   std::cout << "Brute Force" << std::endl;
 
   // Measure computation time
-  auto start_time = std::chrono::high_resolution_clock::now();
-  auto mpOutput = computeMatrixProfileBruteForce(data, window_size);
-  auto matrix_profile = std::get<0>(mpOutput);
-  auto end_time = std::chrono::high_resolution_clock::now();
+  // auto start_time = std::chrono::high_resolution_clock::now();
+  // auto mpOutput = computeMatrixProfileBruteForce(data, window_size);
+  // auto matrix_profile = std::get<0>(mpOutput);
+  // auto end_time = std::chrono::high_resolution_clock::now();
 
-  // // Compute duration
-  auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+  // // // Compute duration
+  // auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
 
-  // // Output results
-  std::cout << "Matrix profile computed for vector of size " << vector_size << " with window size " << window_size << std::endl;
-  std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
+  // // // Output results
+  // std::cout << "Matrix profile computed for vector of size " << vector_size << " with window size " << window_size << std::endl;
+  // std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
 
   // std::cout << "Brute Force v2" << std::endl;
 
@@ -242,12 +243,12 @@ void testMatrixProfileComputationSpeed(int vector_size, int window_size)
 
   std::cout << "BlockSTOMP v2" << std::endl;
   // Measure computation time
-  start_time = std::chrono::high_resolution_clock::now();
-  mpOutput = blockSTOMP_v2(data, window_size, 5000, 5000);
+  auto start_time = std::chrono::high_resolution_clock::now();
+  auto mpOutput = blockSTOMP_v2(data, window_size, 5000, 5000, exclude);
   auto matrix_profile_blockstomp = std::get<0>(mpOutput);
-  end_time = std::chrono::high_resolution_clock::now();
+  auto end_time = std::chrono::high_resolution_clock::now();
   // Compute duration
-  duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+  auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
   std::cout << "Computation time: " << duration.count() << " seconds" << std::endl;
 
   // std::cout << "BlockSTOMP v3" << std::endl;
@@ -355,17 +356,7 @@ auto smp_computation_speed(int vector_size, int period_size, int n_seasons, int 
   std::cout << "STOMP execution time: " << duration.count() << " seconds" << std::endl;
 }
 
-void write_vector_to_file(const std::string& filename, const std::vector<double>& vec) {
-    std::ofstream file(filename);
-    if (!file.is_open()) {
-        std::cerr << "Failed to open file: " << filename << std::endl;
-        return;
-    }
-    for (const auto& value : vec) {
-        file << value << "\n";
-    }
-    file.close();
-}
+
 
 auto test_climate_series()
 {
@@ -456,10 +447,10 @@ int main()
 {
   // testDistance();
   //  compareStumpy();
-  // testMatrixProfileComputationSpeed(20000, 7);
+  testMatrixProfileComputationSpeed(2<<18, 7);
   // smp_computation_speed(2000000, 1000, 4, 64);
   // test_stompv2(1000, 1);
-  test_climate_series();
+  // test_climate_series();
 
   return 0;
 }

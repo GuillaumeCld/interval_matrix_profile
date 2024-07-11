@@ -20,10 +20,10 @@
  */
 template <typename T>
 auto computeMatrixProfileBruteForce(const std::vector<T> &data,
-                                    int window_size)
+                                    const int window_size,
+                                    const int exclude)
 {
     int n_sequence = data.size() - window_size + 1;
-    int exclude = 2; // std::ceil(window_size / 2);
     std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
     std::vector<int> profile_index(n_sequence, 0);
 
@@ -140,8 +140,8 @@ auto computeMatrixProfileSTOMP(const std::vector<T> &data,
             }
         }
 
-#pragma omp barrier
-#pragma omp single
+        #pragma omp barrier
+        #pragma omp single
         {
             // global minimum
             auto min = matrix_profile[0];
@@ -339,12 +339,11 @@ auto blockSTOMP(std::vector<T> &time_series, int window_size, int block_width, i
 }
 
 template <typename T>
-auto blockSTOMP_v2(std::vector<T> &time_series, const int window_size, const int block_width, const int block_height)
+auto blockSTOMP_v2(std::vector<T> &time_series, const int window_size, const int block_width, const int block_height, const int exclude)
 {
     // Time series parameters
     const int n = time_series.size();
     const int n_sequence{n - window_size + 1};
-    const int exclude = 2;
     const int first_block_height{block_height};
     int current_block_height{block_height};
     // Block parameters
@@ -366,15 +365,15 @@ auto blockSTOMP_v2(std::vector<T> &time_series, const int window_size, const int
     std::vector<std::vector<T>> previous_blocks(n_total_blocks * 2);
     // Loop to build the blocks
     int previous_diagonal_shift = (block_height % block_width > 0) ? block_height / block_width + 1 : block_height / block_width;
-#pragma omp parallel shared(first_row, time_series, current_blocks, block_min_pair_per_row, \
-                                n_sequence, window_size, first_block_height, block_width, previous_blocks, previous_diagonal_shift, view)
+    #pragma omp parallel shared(first_row, time_series, current_blocks, block_min_pair_per_row, \
+                                n_sequence, window_size, first_block_height, block_width, exclude, previous_blocks, previous_diagonal_shift, view)
     {
-#pragma omp for schedule(static)
+        #pragma omp for schedule(static)
         for (int j = 0; j < n_sequence; ++j)
         {
             first_row[j] = dotProduct(view, std::span(&time_series[j], window_size));
         }
-#pragma omp single
+        #pragma omp single
         {
             for (int metarow = 0; metarow < nb_metarows; ++metarow)
             {
@@ -392,7 +391,7 @@ auto blockSTOMP_v2(std::vector<T> &time_series, const int window_size, const int
                     const int block_j{(block_id - diagonal_shift) * block_width + block_i};
 
                     #pragma omp task default(none)                                                                                                                                                   \
-                        shared(first_row, time_series, current_blocks, block_min_pair_per_row, n_sequence, window_size, first_block_height, block_width, previous_blocks, std::cout)                 \
+                        shared(first_row, time_series, current_blocks, block_min_pair_per_row, n_sequence, window_size, first_block_height, block_width, exclude, previous_blocks, std::cout)                 \
                         firstprivate(metarow, block_id, block_shift, diagonal_shift, previous_diagonal_shift, row_length, n_total_blocks, current_block_height, block_i, previous_block_id, block_j) \
                         untied
                     // depend(in: previous_blocks[previous_block_id])
@@ -807,25 +806,25 @@ auto blockSTOMP_v5(std::vector<T> &time_series, int window_size, const int block
                         block_min_pair_per_row[block_id] = current_blocks[block_id].get_local_min_rows();
                     }
                 }
-#pragma omp taskwait
+            #pragma omp taskwait
             }
             // Compute the global minimums per row
             for (int i = 0; i < block_height; ++i)
             {
-#pragma omp for reduction(min_pair_min : minimum)
+                #pragma omp for reduction(min_pair_min : minimum)
                 for (int k = 0; k < n_total_blocks; ++k)
                 {
                     auto &min_pair = block_min_pair_per_row[k][i];
                     minimum = min_pair_min2(minimum, min_pair);
                 }
-#pragma omp single
+                #pragma omp single
                 {
                     matrix_profile[metarow * first_block_height + i] = std::sqrt(std::abs(minimum.value));
                     profile_index[metarow * first_block_height + i] = minimum.index;
                     minimum = {-1, std::numeric_limits<T>::max()};
                 }
             }
-#pragma omp single
+            #pragma omp single
             {
                 previous_diagonal_shift = diagonal_shift;
                 // previous_blocks = current_blocks;
@@ -838,3 +837,5 @@ auto blockSTOMP_v5(std::vector<T> &time_series, int window_size, const int block
     }
     return std::make_tuple(matrix_profile, profile_index);
 }
+
+

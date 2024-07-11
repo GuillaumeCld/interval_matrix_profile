@@ -3,14 +3,14 @@ input_file = ARG1
 output_file = ARG2
 
 # Set the terminal and output file
-set terminal pngcairo size 800,600 enhanced font 'Arial,12'
+set terminal pngcairo size 800,500 enhanced font 'Arial,16'
 set output "para.png"
 
 # Set the data file separator
 set datafile separator ","
 
 # Set the title and labels
-set title "Brute Force Execution Time and Speedup vs. Number of Threads"
+# set title "Brute Force Execution Time and Speedup vs. Number of Threads"
 set xlabel "Number of Threads"
 set ylabel "Time (s)"
 set y2label "Speedup"
@@ -22,6 +22,10 @@ set grid
 # Set the key (legend) outside the plot area to avoid overlapping
 set key inside center right
 
+
+# Set ticks axis
+set xtics nomirror
+set ytics nomirror
 # Enable a secondary y-axis on the right side for speedup
 set y2tics
 
