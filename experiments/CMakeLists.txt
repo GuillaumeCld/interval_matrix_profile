@@ -15,11 +15,20 @@ add_executable(
     climate_comparison.cpp
 )
 
+add_executable(
+    climate_pulse
+    climate_pulse_imp.cpp
+)
+
 target_link_libraries(
     experiments
     OpenMP::OpenMP_CXX
 )
 target_link_libraries(
     climate_exp
+    OpenMP::OpenMP_CXX
+)
+target_link_libraries(
+    climate_pulse
     OpenMP::OpenMP_CXX
 )

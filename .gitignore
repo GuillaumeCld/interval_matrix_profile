@@ -3,5 +3,7 @@ build/
 
 Data/SST/*
 Data/ERA5_land/*
+Data/climate_pulse/*
+src/_*
 scripts/*.txt
 scripts/*.png
