@@ -65,7 +65,7 @@ auto seasonal_matrix_profile_brute_force(std::vector<T> &data,
             }
         }
     }
-    return std::make_tuple(matrix_profile, profile_index);
+    return std::make_pair(matrix_profile, profile_index);
 }
 
 /**
@@ -138,7 +138,7 @@ auto seasonal_matrix_profile_brute_force_blocking(std::vector<T> &data,
             }
         }
     }
-    return std::make_tuple(matrix_profile, profile_index);
+    return std::make_pair(matrix_profile, profile_index);
 }
 
 /**
@@ -212,5 +212,5 @@ auto seasonal_matrix_profile_STOMP_blocking(std::vector<T> &data,
             }
         }
     }
-    return std::make_tuple(matrix_profile, profile_index);
+    return std::make_pair(matrix_profile, profile_index);
 }

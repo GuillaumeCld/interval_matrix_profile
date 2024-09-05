@@ -7,3 +7,4 @@ Data/climate_pulse/*
 src/_*
 scripts/*.txt
 scripts/*.png
+notebooks/*.pdf

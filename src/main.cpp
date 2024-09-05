@@ -406,8 +406,8 @@ auto test_climate_series()
   // std::cout << "IMP STOMP execution time: " << duration.count() << " ms" << std::endl;
 
   auto start_time = std::chrono::high_resolution_clock::now();
-  auto result = interval_matrix_profile_STOMP_ep(data, window_size, period_starts, interval_length, exclude);
-  std::vector<double> imp_stomp_ep = std::get<0>(result);
+  auto result = interval_matrix_profile_STOMP(data, window_size, period_starts, interval_length, exclude);
+  std::vector<double> imp_stomp = std::get<0>(result);
   auto end_time = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
   std::cout << "IMP STOMP 2 execution time: " << duration.count() << " ms" << std::endl;
@@ -439,7 +439,7 @@ auto test_climate_series()
   // write_vector_to_file("../Data/SST/smp_stomp.txt", smp_stomp);
   // write_vector_to_file("../Data/SST/imp_bf.txt", imp_bf);
   // write_vector_to_file("../Data/SST/imp_stomp.txt", imp_stomp);
-  write_vector_to_file("../Data/SST/imp_stomp_ep.txt", imp_stomp_ep);
+  write_vector_to_file("../Data/SST/imp_stomp.txt", imp_stomp);
   write_vector_to_file("../Data/SST/imp_stomp_kNN.txt", imp_stomp_kNN);
 }
 

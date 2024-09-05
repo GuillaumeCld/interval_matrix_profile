@@ -136,12 +136,6 @@ public:
             out << this->initial_row[i] << " ";
         }
         out << std::endl;
-        // out << "Row: ";
-        // for (int i = 0; i < _width; ++i)
-        // {
-        //     out << this->row[i] << " ";
-        // }
-        out << std::endl;
     }
 
 private:

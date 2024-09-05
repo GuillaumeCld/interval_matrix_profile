@@ -11,7 +11,7 @@ find_package(pybind11 REQUIRED)
 list(APPEND CMAKE_CXX_FLAGS "-march=native") # -Wall -Wextra -Wpedantic")
 
 add_subdirectory(src)
-# add_subdirectory(tests)
-# add_subdirectory(experiments)
+add_subdirectory(tests)
+add_subdirectory(experiments)
 
 

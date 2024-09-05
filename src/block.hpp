@@ -32,18 +32,18 @@ inline min_pair<T> min_pair_min2(min_pair<T> const &a, min_pair<T> const &b)
 #pragma omp declare reduction(min_pair_min : min_pair<double> : omp_out = min_pair_min2(omp_out, omp_in)) \
     initializer(omp_priv = {-1, DBL_MAX})
 
-
 /**
  * @file block.hpp
  */
-template <typename T>
+template <typename T, bool initialized = true>
 class block
 {
 public:
     using value_type = T;
-    std::function<void(block<T> *)> STOMP_method; // the pointer to the STOMP function
-    int ID;                                       // ID of the block
-    block() = default;                            // Default constructor
+    using pair_t = min_pair<T>;
+    std::function<void(block<T, initialized> *)> STOMP_method; // the pointer to the STOMP function
+    int ID;                                                    // ID of the block
+    block() = default;                                         // Default constructor
 
     /**
      * @brief Constructor
@@ -90,7 +90,7 @@ public:
                 // |        \
                 // |         \
                 // ------------
-                STOMP_method = &block<T>::STOMP_quadrangle_with_initial_recurrence;
+                STOMP_method = &block<T, initialized>::STOMP_quadrangle_with_initial_recurrence;
                 _type = QUADRANGLE_WITH_INITIAL_RECURRENCE;
             }
             else if (j + width <= 0 and j + height > 0)
@@ -101,7 +101,7 @@ public:
                 // |  \
                 //  \  \
                 //   ---
-                STOMP_method = &block<T>::STOMP_quadrangle_without_initial_recurrence;
+                STOMP_method = &block<T, initialized>::STOMP_quadrangle_without_initial_recurrence;
                 _type = QUADRANGLE_WITHOUT_INITIAL_RECURRENCE;
             }
             else if (j + _width > 0 and j + _height > 0)
@@ -111,20 +111,20 @@ public:
                 // |    \
                 //  \    \
                 //   -----
-                STOMP_method = &block<T>::STOMP_polygon;
+                STOMP_method = &block<T, initialized>::STOMP_polygon;
                 _type = POLYGON;
             }
         }
         else if (j + _width + _height > n) [[unlikely]]
         {
             // Case parallelogram truncated on the right
-            STOMP_method = &block<T>::STOMP_right_truncated_parallelogram;
+            STOMP_method = &block<T, initialized>::STOMP_right_truncated_parallelogram;
             _type = RIGHT_TRUNCATED_PARALLELOGRAM;
         }
         else [[likely]]
         {
             // Case parallelogram
-            STOMP_method = &block<T>::STOMP_parallelogram;
+            STOMP_method = &block<T, initialized>::STOMP_parallelogram;
             _type = PARALLELOGRAM;
         }
     }
@@ -140,7 +140,7 @@ public:
           std::span<T> const in_first_row,
           std::span<T> const in_initial_row,
           std::span<T> const in_time_series,
-          std::vector<min_pair<T>>& in_local_min_row)
+          std::vector<min_pair<T>> &in_local_min_row)
         : _n(n),
           _m(m),
           _exclude(exclude),
@@ -154,44 +154,99 @@ public:
           time_series(in_time_series),
           local_min_row(in_local_min_row)
     {
-        // for (auto &min : local_min_row)
-        // {
-        //    std::cout << min.index << ", " << min.value << "  ";
-        // }
-        // std::cout << std::endl;
         this->row.resize(width);
         // Case parallelogram truncated on the left
         if (j < 0) [[unlikely]]
         {
             if (j + _width <= 0 and j + _height <= 0)
             {
-                STOMP_method = &block<T>::STOMP_triangle;
+                STOMP_method = &block<T, initialized>::STOMP_triangle;
                 _type = TRIANGLE;
             }
             else if (j + _width > 0 and j + _height <= 0)
             {
-                STOMP_method = &block<T>::STOMP_quadrangle_with_initial_recurrence;
+                STOMP_method = &block<T, initialized>::STOMP_quadrangle_with_initial_recurrence;
                 _type = QUADRANGLE_WITH_INITIAL_RECURRENCE;
             }
             else if (j + width <= 0 and j + height > 0)
             {
-                STOMP_method = &block<T>::STOMP_quadrangle_without_initial_recurrence;
+                STOMP_method = &block<T, initialized>::STOMP_quadrangle_without_initial_recurrence;
                 _type = QUADRANGLE_WITHOUT_INITIAL_RECURRENCE;
             }
             else if (j + _width > 0 and j + _height > 0)
             {
-                STOMP_method = &block<T>::STOMP_polygon;
+                STOMP_method = &block<T, initialized>::STOMP_polygon;
                 _type = POLYGON;
             }
         }
         else if (j + _width + _height > n) [[unlikely]]
         {
-            STOMP_method = &block<T>::STOMP_right_truncated_parallelogram;
+            STOMP_method = &block<T, initialized>::STOMP_right_truncated_parallelogram;
             _type = RIGHT_TRUNCATED_PARALLELOGRAM;
         }
         else [[likely]]
         {
-            STOMP_method = &block<T>::STOMP_parallelogram;
+            STOMP_method = &block<T, initialized>::STOMP_parallelogram;
+            _type = PARALLELOGRAM;
+        }
+    }
+
+    block(const int n,
+          const int m,
+          const int exclude,
+          const int i,
+          const int j,
+          const int ID,
+          const int width,
+          const int height,
+          std::span<T> const in_first_row,
+          std::span<T> const in_time_series,
+          std::vector<min_pair<T>> &in_local_min_row)
+        : _n(n),
+          _m(m),
+          _exclude(exclude),
+          _global_i(i),
+          _global_j(j),
+          ID(ID),
+          _width(width),
+          _height(height),
+          first_row(in_first_row),
+          time_series(in_time_series),
+          local_min_row(in_local_min_row)
+    {
+        this->row.resize(width);
+        // Case parallelogram truncated on the left
+        if (j < 0) [[unlikely]]
+        {
+            if (j + _width <= 0 and j + _height <= 0)
+            {
+                STOMP_method = &block<T, initialized>::STOMP_triangle;
+                _type = TRIANGLE;
+            }
+            else if (j + _width > 0 and j + _height <= 0)
+            {
+                STOMP_method = &block<T, initialized>::STOMP_quadrangle_with_initial_recurrence;
+                _type = QUADRANGLE_WITH_INITIAL_RECURRENCE;
+            }
+            else if (j + width <= 0 and j + height > 0)
+            {
+                STOMP_method = &block<T, initialized>::STOMP_quadrangle_without_initial_recurrence;
+                _type = QUADRANGLE_WITHOUT_INITIAL_RECURRENCE;
+            }
+            else if (j + _width > 0 and j + _height > 0)
+            {
+                STOMP_method = &block<T, initialized>::STOMP_polygon;
+                _type = POLYGON;
+            }
+        }
+        else if (j + _width + _height > n) [[unlikely]]
+        {
+            STOMP_method = &block<T, initialized>::STOMP_right_truncated_parallelogram;
+            _type = RIGHT_TRUNCATED_PARALLELOGRAM;
+        }
+        else [[likely]]
+        {
+            STOMP_method = &block<T, initialized>::STOMP_parallelogram;
             _type = PARALLELOGRAM;
         }
     }
@@ -244,12 +299,6 @@ public:
             out << this->initial_row[i] << " ";
         }
         out << std::endl;
-        // out << "Row: ";
-        // for (int i = 0; i < _width; ++i)
-        // {
-        //     out << this->row[i] << " ";
-        // }
-        out << std::endl;
     }
 
 private:
@@ -287,7 +336,7 @@ private:
      * @param _global_i the global i coordinate
      * @param _global_j the global j coordinate
      */
-    inline void update_row(const int j, const int global_i, const int global_j)
+    inline void update_row_element(const int j, const int global_i, const int global_j)
     {
         // Compute the elements to remove (prev) and the elements to add (next)
         const T prev_data{this->time_series[global_i - 1] - this->time_series[global_j - 1]};
@@ -310,7 +359,30 @@ private:
         int global_j = _global_j + start + i;
         for (int j = start; j < end; ++j)
         {
-            update_row(j, global_i, global_j);
+            update_row_element(j, global_i, global_j);
+            update_min(j, min, global_i, global_j);
+            ++global_j;
+        }
+        this->local_min_row[i] = min;
+    }
+
+    /**
+     * @brief Update the row with brute force and compute the minimum of the row.
+     *
+     * @param start The start index of the row.
+     * @param end The end index of the row.
+     * @param i The index of the row.
+     * @param min The pair to update.
+     */
+    inline void compute_row_brute_force(const int start, const int end, int i, min_pair<T> &min)
+    {
+        const int global_i = _global_i + i;
+        int global_j = _global_j + start + i;
+        std::span<T> view = std::span(&time_series[global_i], _m);
+        for (int j = start; j < end; ++j)
+        {
+            update_row_element(j, global_i, global_j);
+            this->row[j] = dotProduct(view, std::span(&time_series[global_j], _m));
             update_min(j, min, global_i, global_j);
             ++global_j;
         }
@@ -369,23 +441,41 @@ private:
         }
         else [[likely]]
         {
+            const int i{0};
             // Case initialize with the given initial row
             if (_global_j == 0) [[unlikely]]
             {
                 // Case first column of the distance matrix
                 this->row[0] = this->first_row[_global_i];
                 update_min(0, min, _global_i, 0);
-                initialize_with_initial_row(1, _width, min);
+                const int j{1};
+                if constexpr (initialized)
+                {
+                    initialize_with_initial_row(j, _width, min);
+                }
+                else
+                {
+                    compute_row_brute_force(j, _width, i, min);
+                }
             }
             else [[likely]]
             {
-                initialize_with_initial_row(0, _width, min);
+                const int j{0};
+                if constexpr (initialized)
+                {
+                    initialize_with_initial_row(j, _width, min);
+                }
+                else
+                {
+                    compute_row_brute_force(j, _width, i, min);
+                }
             }
         }
+        const int j{0};
         for (int i = 1; i < _height; ++i)
         {
             min_pair<T> min = this->local_min_row[i];
-            compute_row(0, _width, i, min);
+            compute_row(j, _width, i, min);
         }
     }
 
@@ -394,8 +484,8 @@ private:
      */
     inline void STOMP_triangle()
     {
-        int first_line = -(_global_j + _width) + 1;
-        int elem_per_row{1};
+        const int first_line = -(_global_j + _width) + 1;
+        const int elem_per_row{1};
         int current_start{_width - elem_per_row};
         for (int i = first_line; i < _height; ++i)
         {
@@ -406,7 +496,6 @@ private:
             update_min(current_start, min, _global_i + i, 0);
             // Compute the rest of the row
             compute_row(current_start + 1, _width, i, min);
-            ++elem_per_row;
             --current_start;
         }
     }
@@ -421,7 +510,6 @@ private:
         const int nb_right_elements{_width - nb_left_elements};
         min_pair<T> min = this->local_min_row[0];
         // intialize the first row
-        // std::cout << "First row " << this->first_row[_global_i] << " at " << _global_i << std::endl << std::flush;
         this->row[nb_left_elements] = this->first_row[_global_i];
         update_min(nb_left_elements, min, _global_i, 0);
 
@@ -437,13 +525,26 @@ private:
         }
         else
         {
-            for (int j = 1; j < nb_right_elements; ++j)
+            if constexpr (initialized)
             {
-                const T prev_data{this->time_series[global_j - 1] - this->time_series[_global_i - 1]};
-                const T next_data{this->time_series[global_j + _m - 1] - this->time_series[_global_i + _m - 1]};
-                this->row[nb_left_elements + j] = this->initial_row[nb_left_elements + j] + (next_data * next_data - prev_data * prev_data);
-                update_min(nb_left_elements + j, min, _global_i, global_j);
-                ++global_j;
+                for (int j = 1; j < nb_right_elements; ++j)
+                {
+                    const T prev_data{this->time_series[global_j - 1] - this->time_series[_global_i - 1]};
+                    const T next_data{this->time_series[global_j + _m - 1] - this->time_series[_global_i + _m - 1]};
+                    this->row[nb_left_elements + j] = this->initial_row[nb_left_elements + j] + (next_data * next_data - prev_data * prev_data);
+                    update_min(nb_left_elements + j, min, _global_i, global_j);
+                    ++global_j;
+                }
+            }
+            else
+            {
+                std::span view = std::span(&time_series[_global_i], _m);
+                for (int j = 1; j < nb_right_elements; ++j)
+                {
+                    this->row[nb_left_elements + j] = dotProduct(view, std::span(&time_series[global_j], _m));
+                    update_min(nb_left_elements + j, min, _global_i, global_j);
+                    ++global_j;
+                }
             }
         }
         this->local_min_row[0] = min;
@@ -486,7 +587,7 @@ private:
         //     this->local_min_row[i] = this->local_min_row[0];
         // }
         // Triangle part
-        int elem_per_row{1};
+        const int elem_per_row{1};
         int current_start{_width - elem_per_row};
         int global_i{_global_i + first_line};
         for (int i = first_line; i < first_line + _width; ++i)
@@ -497,7 +598,6 @@ private:
             update_min(current_start, min, global_i, 0);
             // Compute the rest of the row
             compute_row(current_start + 1, _width, i, min);
-            ++elem_per_row;
             ++global_i;
             --current_start;
         }
@@ -514,26 +614,22 @@ private:
      */
     inline void STOMP_quadrangle_with_initial_recurrence()
     {
-        int elem_per_row{_width + _global_j};
+        const int elem_per_row{_width + _global_j};
         int current_start{_width - elem_per_row};
         min_pair<T> min = this->local_min_row[0];
         // Initialize the first row
+        // compute the first element of the row
         this->row[current_start] = this->first_row[_global_i];
         update_min(current_start, min, _global_i, 0);
-
-        int global_j{_global_j + current_start + 1};
-        for (int j = current_start + 1; j < _width; ++j)
+        // Compute the rest of the row
+        if constexpr (initialized)
         {
-            // Compute the elements to remove (prev) and the elements to add (next)
-            const T prev_data{this->time_series[global_j - 1] - this->time_series[_global_i - 1]};
-            const T next_data{this->time_series[global_j + _m - 1] - this->time_series[_global_i + _m - 1]};
-            // Update the row following the recurrence
-            this->row[j] = this->initial_row[j] + (next_data * next_data - prev_data * prev_data);
-            update_min(j, min, _global_i, global_j);
-            ++global_j;
+            initialize_with_initial_row(current_start + 1, _width, min);
         }
-        this->local_min_row[0] = min;
-        ++elem_per_row;
+        else
+        {
+            compute_row_brute_force(current_start + 1, _width, 0, min);
+        }
         --current_start;
         int global_i{_global_i + 1};
         // Compute the rest of the quadrangle
@@ -545,7 +641,6 @@ private:
             update_min(current_start, min, global_i, 0);
             // Compute the rest of the row
             compute_row(current_start + 1, _width, i, min);
-            ++elem_per_row;
             ++global_i;
             --current_start;
         }
@@ -565,7 +660,14 @@ private:
         }
         else
         {
-            initialize_with_initial_row(0, j_max, min);
+            if constexpr (initialized)
+            {
+                initialize_with_initial_row(0, j_max, min);
+            }
+            else
+            {
+                compute_row_brute_force(0, j_max, 0, min);
+            }
         }
         for (int i = 1; i < i_max; ++i)
         {

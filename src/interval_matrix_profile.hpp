@@ -14,17 +14,20 @@
 #include "block_kNN.hpp"
 #include "k_nn_lookup.hpp"
 
-template <typename T>
-auto interval_matrix_profile_brute_force(std::vector<T> &time_series,
-                                        const int window_size,
-                                        std::vector<int> const &period_starts,
-                                        const int interval_length,
-                                        const int exclude)
+template <typename array_value_t, typename array_index_t>
+auto interval_matrix_profile_brute_force(array_value_t &time_series,
+                                         const int window_size,
+                                         array_index_t const &period_starts,
+                                         const int interval_length,
+                                         const int exclude)
 {
+    using value_t = array_value_t::value_type;
+    using index_t = array_index_t::value_type;
+
     const int n = time_series.size();
     const int n_sequence = n - window_size + 1;
-    std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
-    std::vector<int> profile_index(n_sequence, 0);
+    std::vector<value_t> matrix_profile(n_sequence, std::numeric_limits<value_t>::max());
+    std::vector<index_t> profile_index(n_sequence, 0);
     const int half_interval = interval_length / 2;
     bool is_periodic = window_size <= half_interval;
     const int n_periods_i = period_starts.size();
@@ -38,16 +41,11 @@ auto interval_matrix_profile_brute_force(std::vector<T> &time_series,
         {
             const int place_in_period = std::min(i - i_start, 365);
             auto view = std::span(&time_series[i], window_size);
-            auto min = std::numeric_limits<T>::max();
+            auto min = std::numeric_limits<value_t>::max();
             int min_index = 0;
 
             for (int j_period = 0; j_period < n_periods_i; ++j_period)
             {
-                // if (j_period == n_periods_i - 1 and period_starts[j_period] + place_in_period > n_sequence)
-                // {
-                //     if (i == 6203) std::cout << "Break " << i << ", " << place_in_period << std::endl;
-                //     break;
-                // }
                 const int j_start = std::max(period_starts[j_period] + place_in_period - half_interval, 0);
                 const int j_end = std::min(period_starts[j_period] + place_in_period + half_interval, n_sequence);
                 const int i_pos = i - i_start;
@@ -64,7 +62,7 @@ auto interval_matrix_profile_brute_force(std::vector<T> &time_series,
                 }
             }
             if (is_periodic)
-            {   
+            {
                 const int i_pos = i - i_start;
                 const int j_start = n + 1 + i_pos - half_interval;
                 const int j_end = std::min(n + 1 + i_pos + half_interval, n_sequence);
@@ -84,56 +82,146 @@ auto interval_matrix_profile_brute_force(std::vector<T> &time_series,
         }
     }
 
-    return std::make_tuple(matrix_profile, profile_index);
+    return std::make_pair(matrix_profile, profile_index);
 }
 
-
-template <typename T>
-auto interval_matrix_profile_STOMP(std::vector<T> &time_series,
-                                     const int window_size,
-                                     std::vector<int> const &period_starts,
-                                     const int interval_length,
-                                     const int exclude)
+template <typename array_value_t, typename array_index_t>
+auto interval_matrix_profile_STOMP(array_value_t &time_series,
+                                   const int window_size,
+                                   array_index_t const &period_starts,
+                                   const int interval_length,
+                                   const int exclude)
 {
+    using value_t = array_value_t::value_type;
+    using index_t = array_index_t::value_type;
+    using pair_t = min_pair<value_t>;
     const int n = time_series.size();
     const int n_sequence = n - window_size + 1;
     const int metarows = period_starts.size();
     const int half_interval = interval_length / 2;
 
     const int nb_blocks = (window_size > half_interval) ? metarows : metarows + 1;
-    std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
-    std::vector<int> profile_index(n_sequence, -1);
+    std::vector<value_t> matrix_profile(n_sequence, std::numeric_limits<value_t>::max());
+    std::vector<index_t> profile_index(n_sequence, -1);
 
-    std::vector<T> first_row(n_sequence);
+    std::vector<value_t> first_row(n_sequence);
     int block_height;
     int block_width;
     int block_i;
     int block_j;
 
-
-
-    #pragma omp parallel default(none) \
+#pragma omp parallel default(none)                                               \
     shared(time_series, matrix_profile, profile_index, first_row, period_starts) \
-    firstprivate(n, n_sequence, metarows, interval_length, half_interval, nb_blocks, window_size, exclude) \
-    private(block_height, block_width, block_i, block_j)
+    firstprivate(n, n_sequence, metarows, interval_length, half_interval, nb_blocks, window_size, exclude) private(block_height, block_width, block_i, block_j)
     {
         std::span view = std::span(&time_series[0], window_size);
-        // Compute the first row of the matrix profile
-        #pragma omp for 
+// Compute the first row of the matrix profile
+#pragma omp for
         for (int j = 0; j < n_sequence; ++j)
         {
             first_row[j] = dotProduct(view, std::span(&time_series[j], window_size));
         }
-        #pragma omp barrier
-        // Iterate over the metarows
-        #pragma omp for
+#pragma omp barrier
+// Iterate over the metarows
+#pragma omp for
         for (int metarow = 0; metarow < metarows; ++metarow)
         {
             block_i = period_starts[metarow];
             // Compute the height of the current block
-            block_height= (metarow == metarows - 1) ? n_sequence - period_starts[metarow] : period_starts[metarow + 1] - period_starts[metarow];
+            block_height = (metarow == metarows - 1) ? n_sequence - period_starts[metarow] : period_starts[metarow + 1] - period_starts[metarow];
             // Initialize the local minimum per rows
-            std::vector<min_pair<T>> local_min_row(block_height, {-1, std::numeric_limits<T>::max()});
+            std::vector<pair_t> local_min_row(block_height, {-1, std::numeric_limits<value_t>::max()});
+            // Iterate over the blocks
+            for (int column = 0; column < nb_blocks; ++column)
+            {
+                // Compute the width of the current block
+                if (column < metarows)
+                {
+
+                    block_width = (column == metarows - 1) ? std::min(interval_length, n_sequence - (period_starts[column] - half_interval)) : interval_length;
+                    block_j = period_starts[column] - half_interval;
+                }
+                else
+                {
+                    block_j = n + 1 - half_interval;
+                    if (block_j >= n_sequence)
+                    {
+                        break;
+                    }
+                }
+
+                // Create the block
+                block<value_t, false> block(n_sequence,
+                                     window_size,
+                                     exclude,
+                                     block_i,
+                                     block_j,
+                                     column,
+                                     block_width,
+                                     block_height,
+                                     first_row,
+                                     time_series,
+                                     local_min_row);
+                block.STOMP();
+                local_min_row = std::move(block.get_local_min_rows());
+            }
+            // Compute the global minimums per row and update the matrix profile/index
+            for (int i = 0; i < block_height; ++i)
+            {
+                matrix_profile[block_i + i] = std::sqrt(std::abs(local_min_row[i].value));
+                profile_index[block_i + i] = local_min_row[i].index;
+            }
+        }
+    }
+    return std::make_pair(matrix_profile, profile_index);
+}
+
+template <typename array_value_t, typename array_index_t>
+auto interval_matrix_profile_STOMP_initialized(array_value_t &time_series,
+                                   const int window_size,
+                                   array_index_t const &period_starts,
+                                   const int interval_length,
+                                   const int exclude)
+{
+    using value_t = array_value_t::value_type;
+    using index_t = array_index_t::value_type;
+    using pair_t = min_pair<value_t>;
+    const int n = time_series.size();
+    const int n_sequence = n - window_size + 1;
+    const int metarows = period_starts.size();
+    const int half_interval = interval_length / 2;
+
+    const int nb_blocks = (window_size > half_interval) ? metarows : metarows + 1;
+    std::vector<value_t> matrix_profile(n_sequence, std::numeric_limits<value_t>::max());
+    std::vector<index_t> profile_index(n_sequence, -1);
+
+    std::vector<value_t> first_row(n_sequence);
+    int block_height;
+    int block_width;
+    int block_i;
+    int block_j;
+
+#pragma omp parallel default(none)                                               \
+    shared(time_series, matrix_profile, profile_index, first_row, period_starts) \
+    firstprivate(n, n_sequence, metarows, interval_length, half_interval, nb_blocks, window_size, exclude) private(block_height, block_width, block_i, block_j)
+    {
+        std::span view = std::span(&time_series[0], window_size);
+// Compute the first row of the matrix profile
+#pragma omp for
+        for (int j = 0; j < n_sequence; ++j)
+        {
+            first_row[j] = dotProduct(view, std::span(&time_series[j], window_size));
+        }
+#pragma omp barrier
+// Iterate over the metarows
+#pragma omp for
+        for (int metarow = 0; metarow < metarows; ++metarow)
+        {
+            block_i = period_starts[metarow];
+            // Compute the height of the current block
+            block_height = (metarow == metarows - 1) ? n_sequence - period_starts[metarow] : period_starts[metarow + 1] - period_starts[metarow];
+            // Initialize the local minimum per rows
+            std::vector<pair_t> local_min_row(block_height, {-1, std::numeric_limits<value_t>::max()});
             // Iterate over the blocks
             for (int column = 0; column < nb_blocks; ++column)
             {
@@ -154,8 +242,8 @@ auto interval_matrix_profile_STOMP(std::vector<T> &time_series,
                 }
 
                 // Initialize the first row of the block
-                std::span<T> initial_row;
-                std::vector<T> tmp(block_width, T(0));
+                std::span<value_t> initial_row;
+                std::vector<value_t> tmp(block_width, value_t(0));
                 if (metarow == 0)
                 {
                     if (block_j < 0)
@@ -173,7 +261,7 @@ auto interval_matrix_profile_STOMP(std::vector<T> &time_series,
                 }
                 else
                 {
-                    std::span<T> view = std::span(&time_series[block_i - 1], window_size);
+                    std::span<value_t> view = std::span(&time_series[block_i - 1], window_size);
                     int start_index = (block_j < 0) ? half_interval : 0;
                     for (int j = start_index; j < block_width; ++j)
                     {
@@ -183,18 +271,18 @@ auto interval_matrix_profile_STOMP(std::vector<T> &time_series,
                 }
 
                 // Create the block
-                block<T> block(n_sequence,
-                            window_size,
-                            exclude,
-                            block_i,
-                            block_j,
-                            column,
-                            block_width,
-                            block_height,
-                            first_row,
-                            initial_row,
-                            time_series,
-                            local_min_row);
+                block<value_t> block(n_sequence,
+                                     window_size,
+                                     exclude,
+                                     block_i,
+                                     block_j,
+                                     column,
+                                     block_width,
+                                     block_height,
+                                     first_row,
+                                     initial_row,
+                                     time_series,
+                                     local_min_row);
                 block.STOMP();
                 local_min_row = std::move(block.get_local_min_rows());
             }
@@ -206,23 +294,26 @@ auto interval_matrix_profile_STOMP(std::vector<T> &time_series,
             }
         }
     }
-    return std::make_tuple(matrix_profile, profile_index);
+    return std::make_pair(matrix_profile, profile_index);
 }
 
 
-template <typename T>
-auto interval_matrix_profile_STOMP_kNN(std::vector<T> &time_series,
-                                     const int window_size,
-                                     std::vector<int> const &period_starts,
-                                     const int interval_length,
-                                     const int exclude,
-                                     const int k)
+template <typename array_value_t, typename array_index_t>
+auto interval_matrix_profile_STOMP_kNN(array_value_t &time_series,
+                                       const int window_size,
+                                       array_index_t const &period_starts,
+                                       const int interval_length,
+                                       const int exclude,
+                                       const int k)
 {
-    using value_t = min_pair<T>;
-    using container_t = std::vector<value_t>;
-    auto lesser = [](value_t const &a, value_t const &b) -> bool
+
+    using value_t = array_value_t::value_type;
+    using index_t = array_index_t::value_type;
+    using pair_t = min_pair<value_t>;
+    using container_t = std::vector<pair_t>;
+    auto lesser = [](pair_t const &a, pair_t const &b) -> bool
     { return a.value < b.value; };
-    using heap_type = typename std::priority_queue<value_t, container_t, decltype(lesser)>;
+    using heap_type = typename std::priority_queue<pair_t, container_t, decltype(lesser)>;
 
     const int n = time_series.size();
     const int n_sequence = n - window_size + 1;
@@ -230,40 +321,38 @@ auto interval_matrix_profile_STOMP_kNN(std::vector<T> &time_series,
     const int half_interval = interval_length / 2;
 
     const int nb_blocks = (window_size > half_interval) ? metarows : metarows + 1;
-    std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
-    std::vector<int> profile_index(n_sequence, -1);
+    std::vector<value_t> matrix_profile(n_sequence, std::numeric_limits<value_t>::max());
+    std::vector<index_t> profile_index(n_sequence, -1);
 
-    std::vector<T> first_row(n_sequence);
+    std::vector<value_t> first_row(n_sequence);
     int block_height;
     int block_width;
     int block_i;
     int block_j;
 
-
-    #pragma omp parallel default(none) \
+#pragma omp parallel default(none)                                                                  \
     shared(time_series, matrix_profile, profile_index, first_row, period_starts, lesser, std::cout) \
-    firstprivate(k, n, n_sequence, metarows, interval_length, half_interval, nb_blocks, window_size, exclude) \
-    private(block_height, block_width, block_i, block_j)
+    firstprivate(k, n, n_sequence, metarows, interval_length, half_interval, nb_blocks, window_size, exclude) private(block_height, block_width, block_i, block_j)
     {
         auto cumulative_time = 0.0;
         auto cumulative_time_heaps = 0.0;
         auto cumulative_time_stomp = 0.0;
-        auto cumulative_time_block = 0.0; 
+        auto cumulative_time_block = 0.0;
         std::span view = std::span(&time_series[0], window_size);
-        // Compute the first row of the matrix profile
-        #pragma omp for 
+// Compute the first row of the matrix profile
+#pragma omp for
         for (int j = 0; j < n_sequence; ++j)
         {
             first_row[j] = dotProduct(view, std::span(&time_series[j], window_size));
         }
-        #pragma omp barrier
-        // Iterate over the metarows
-        #pragma omp for
+#pragma omp barrier
+// Iterate over the metarows
+#pragma omp for
         for (int metarow = 0; metarow < metarows; ++metarow)
         {
             block_i = period_starts[metarow];
             // Compute the height of the current block
-            block_height= (metarow == metarows - 1) ? n_sequence - period_starts[metarow] : period_starts[metarow + 1] - period_starts[metarow];
+            block_height = (metarow == metarows - 1) ? n_sequence - period_starts[metarow] : period_starts[metarow + 1] - period_starts[metarow];
             // Initialize the local minimum per rows
             // auto start_init = std::chrono::high_resolution_clock::now();
             std::vector<heap_type> local_heap_row(block_height, heap_type(lesser));
@@ -290,8 +379,8 @@ auto interval_matrix_profile_STOMP_kNN(std::vector<T> &time_series,
                 }
 
                 // Initialize the first row of the block
-                std::span<T> initial_row;
-                std::vector<T> tmp(block_width, T(0));
+                std::span<value_t> initial_row;
+                std::vector<value_t> tmp(block_width, value_t(0));
                 if (metarow == 0)
                 {
                     if (block_j < 0)
@@ -309,7 +398,7 @@ auto interval_matrix_profile_STOMP_kNN(std::vector<T> &time_series,
                 }
                 else
                 {
-                    std::span<T> view = std::span(&time_series[block_i - 1], window_size);
+                    std::span<value_t> view = std::span(&time_series[block_i - 1], window_size);
                     int start_index = (block_j < 0) ? half_interval : 0;
                     // std::cout << "Start index " << start_index << std::endl << std::flush;
                     for (int j = start_index; j < block_width; ++j)
@@ -321,19 +410,19 @@ auto interval_matrix_profile_STOMP_kNN(std::vector<T> &time_series,
 
                 // Create the block
                 // auto start_block = std::chrono::high_resolution_clock::now();
-                block_kNN<T, heap_type> block(n_sequence,
-                            window_size,
-                            exclude,
-                            block_i,
-                            block_j,
-                            column,
-                            block_width,
-                            block_height,
-                            k,
-                            first_row,
-                            initial_row,
-                            time_series,
-                            &local_heap_row);
+                block_kNN<value_t, heap_type> block(n_sequence,
+                                              window_size,
+                                              exclude,
+                                              block_i,
+                                              block_j,
+                                              column,
+                                              block_width,
+                                              block_height,
+                                              k,
+                                              first_row,
+                                              initial_row,
+                                              time_series,
+                                              &local_heap_row);
                 // auto end_block = std::chrono::high_resolution_clock::now();
                 // auto duration_block = std::chrono::duration_cast<std::chrono::microseconds>(end_block - start_block).count();
                 // cumulative_time_block += duration_block;
@@ -349,13 +438,13 @@ auto interval_matrix_profile_STOMP_kNN(std::vector<T> &time_series,
             // auto start = std::chrono::high_resolution_clock::now();
             for (int i = 0; i < block_height; ++i)
             {
-                auto k_nn = extract_k_min_from_heap<T,heap_type,value_t>(local_heap_row.at(i), k, exclude);
+                auto k_nn = extract_k_min_from_heap<value_t, heap_type, pair_t>(local_heap_row.at(i), k, exclude);
                 const int heap_size = local_heap_row.at(i).size();
-                std::vector<T> k_nn_values = k_nn.first ;
-                std::vector<int> k_nn_indices = k_nn.second;
+                std::vector<value_t> k_nn_values = k_nn.first;
+                std::vector<index_t> k_nn_indices = k_nn.second;
                 // std::cout << "Sizes " << heap_size << " " << k_nn_values.size() << " " << k_nn_indices.size() << " k: " << k << std::endl;
-                matrix_profile[block_i + i] = std::sqrt(std::abs(k_nn_values.at(k-1)));
-                profile_index[block_i + i] = k_nn_indices.at(k-1);
+                matrix_profile[block_i + i] = std::sqrt(std::abs(k_nn_values.at(k - 1)));
+                profile_index[block_i + i] = k_nn_indices.at(k - 1);
             }
             // auto end = std::chrono::high_resolution_clock::now();
             // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -366,6 +455,6 @@ auto interval_matrix_profile_STOMP_kNN(std::vector<T> &time_series,
         // std::cout << "Cumulative time block creation " << cumulative_time_block / 1000.0 << " ms" << std::endl;
         // std::cout << "Cumulative time stomp processing " << cumulative_time_stomp / 1000.0 << " ms" << std::endl;
     }
-   
-    return std::make_tuple(matrix_profile, profile_index);
+
+    return std::make_pair(matrix_profile, profile_index);
 }

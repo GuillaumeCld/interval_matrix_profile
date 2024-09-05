@@ -83,7 +83,7 @@ auto daily_climate_series()
     std::cout << "IMP BF execution time: " << duration.count() << " ms" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = interval_matrix_profile_STOMP_ep(data, window_size, period_starts, interval_length, exclude);
+    result = interval_matrix_profile_STOMP(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_stomp = std::get<0>(result);
     std::vector<int> imp_stomp_index = std::get<1>(result);
     end_time = std::chrono::high_resolution_clock::now();
@@ -160,8 +160,8 @@ auto hourly_climate_series()
     std::cout << "Interval Matrix Profile" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = interval_matrix_profile_STOMP_ep(data, window_size, period_starts, interval_length, exclude);
-    std::vector<double> imp_stomp_ep = std::get<0>(result);
+    result = interval_matrix_profile_STOMP(data, window_size, period_starts, interval_length, exclude);
+    std::vector<double> imp_stomp = std::get<0>(result);
     end_time = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
     std::cout << "IMP STOMP execution time: " << duration.count() << " s" << std::endl;
@@ -175,7 +175,7 @@ auto hourly_climate_series()
 
     write_vector_to_file("../Data/ERA5_land/hourly_outputs/mp_stomp.txt", mp_stomp);
     write_vector_to_file("../Data/ERA5_land/hourly_outputs/smp_stomp.txt", smp_stomp);
-    write_vector_to_file("../Data/ERA5_land/hourly_outputs/imp_stomp_ep.txt", imp_stomp_ep);
+    write_vector_to_file("../Data/ERA5_land/hourly_outputs/imp_stomp.txt", imp_stomp);
     write_vector_to_file("../Data/ERA5_land/hourly_outputs/imp_stomp_kNN.txt", imp_stomp_kNN);
 }
 
