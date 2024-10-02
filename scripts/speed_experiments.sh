@@ -16,7 +16,7 @@ do
     export OMP_NUM_THREADS=$i
     ./build/experiments/experiments $vector_size $window_size > res_tmp
     cat res_tmp
-    TIME=$(grep "STOMP" res_tmp | awk '{print $4}')
+    TIME=$(grep "BLOCK" res_tmp | awk '{print $4}')
     echo "$i,${TIME}" >> $output_file
     rm res_tmp
 done

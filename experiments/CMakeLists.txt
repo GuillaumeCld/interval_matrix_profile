@@ -32,3 +32,7 @@ target_link_libraries(
     climate_pulse
     OpenMP::OpenMP_CXX
 )
+
+
+add_executable(imp_time imp_time_comparison.cpp)
+target_link_libraries(imp_time PRIVATE OpenMP::OpenMP_CXX)

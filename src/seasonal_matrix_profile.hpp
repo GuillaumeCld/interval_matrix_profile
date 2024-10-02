@@ -173,7 +173,7 @@ auto seasonal_matrix_profile_STOMP_blocking(std::vector<T> &data,
             for (const auto &pair_row : season)
             {
 
-                #pragma omp task default(none)                                                    \
+                #pragma omp task default(none)                                                \
                 shared(data, n_sequence, window_size, exclude, matrix_profile, profile_index) \
                 firstprivate(season, pair_row)                                                \
                 untied
