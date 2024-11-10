@@ -19,7 +19,7 @@ block_file="./scripts/output_files/${output_file}_block.txt"
 echo "k,Time" > $block_file
 
 # Loop to run the experiment 20 times with different thread numbers
-for k in $(seq $min_k 1 $max_k)
+for k in 1 5 10 20
 do
     echo "Running experiment $k"
     taskset -c 1 ./build/experiments/imp_time 5 $k > res_tmp

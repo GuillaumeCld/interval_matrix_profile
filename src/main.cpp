@@ -372,7 +372,7 @@ auto test_climate_series()
   seasons.push_back(build_season_vector<double>("../Data/SST/seasons_sst_1.txt", n));
   seasons.push_back(build_season_vector<double>("../Data/SST/seasons_sst_2.txt", n));
   seasons.push_back(build_season_vector<double>("../Data/SST/seasons_sst_3.txt", n));
-  int interval_length = 90;
+  int interval_length = 100;
   std::vector<int> period_starts;
   readFile<int>("../Data/SST/periods_start_sst.txt", period_starts, "%d");
 
@@ -406,11 +406,19 @@ auto test_climate_series()
   // std::cout << "IMP STOMP execution time: " << duration.count() << " ms" << std::endl;
 
   auto start_time = std::chrono::high_resolution_clock::now();
-  auto result = interval_matrix_profile_STOMP(data, window_size, period_starts, interval_length, exclude);
+  auto result = interval_matrix_profile_STOMP_initialized(data, window_size, period_starts, interval_length, exclude);
   std::vector<double> imp_stomp = std::get<0>(result);
   auto end_time = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
   std::cout << "IMP STOMP 2 execution time: " << duration.count() << " ms" << std::endl;
+
+  start_time = std::chrono::high_resolution_clock::now();
+  result = vBIMP(data, window_size, period_starts, interval_length, exclude);
+  std::vector<double> imp_stomp_vec = std::get<0>(result);
+  end_time = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+  std::cout << "IMP STOMP Vectorized execution time: " << duration.count() << " ms" << std::endl;
+
 
   start_time = std::chrono::high_resolution_clock::now();
   result = interval_matrix_profile_STOMP_kNN(data, window_size, period_starts, interval_length, exclude, k);
@@ -447,10 +455,10 @@ int main()
 {
   // testDistance();
   //  compareStumpy();
-  testMatrixProfileComputationSpeed(2<<18, 7);
+  // testMatrixProfileComputationSpeed(2<<18, 7);
   // smp_computation_speed(2000000, 1000, 4, 64);
   // test_stompv2(1000, 1);
-  // test_climate_series();
+  test_climate_series();
 
   return 0;
 }

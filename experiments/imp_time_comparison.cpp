@@ -41,15 +41,15 @@ void m_impact(const int window_size)
     std::cout << "BF " << duration.count() << " ms" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = modified_STOMP(data, window_size, period_starts, interval_length, exclude);
-    std::vector<double> imp_stomp = std::get<0>(result);
-    std::vector<int> imp_stomp_index = std::get<1>(result);
+    result = modified_AAMP(data, window_size, period_starts, interval_length, exclude);
+    std::vector<double> imp_aamp = std::get<0>(result);
+    std::vector<int> imp_aamp_index = std::get<1>(result);
     end_time = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-    std::cout << "STOMP " << duration.count() << " ms" << std::endl;
+    std::cout << "aamp " << duration.count() << " ms" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = interval_matrix_profile_STOMP(data, window_size, period_starts, interval_length, exclude);
+    result = BIMP(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_block = std::get<0>(result);
     std::vector<int> imp_block_index = std::get<1>(result);
     end_time = std::chrono::high_resolution_clock::now();
@@ -88,15 +88,15 @@ void year_impact(int n_year)
     std::cout << "BF " << duration.count() << " ms" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = modified_STOMP(data, window_size, period_starts, interval_length, exclude);
-    std::vector<double> imp_stomp = std::get<0>(result);
-    std::vector<int> imp_stomp_index = std::get<1>(result);
+    result = modified_AAMP(data, window_size, period_starts, interval_length, exclude);
+    std::vector<double> imp_aamp = std::get<0>(result);
+    std::vector<int> imp_aamp_index = std::get<1>(result);
     end_time = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-    std::cout << "STOMP " << duration.count() << " ms" << std::endl;
+    std::cout << "aamp " << duration.count() << " ms" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = interval_matrix_profile_STOMP(data, window_size, period_starts, interval_length, exclude);
+    result = BIMP(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_block = std::get<0>(result);
     std::vector<int> imp_block_index = std::get<1>(result);
     end_time = std::chrono::high_resolution_clock::now();
@@ -135,15 +135,15 @@ void interval_impact(const int interval_length)
     std::cout << "BF " << duration.count() << " ms" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = modified_STOMP(data, window_size, period_starts, interval_length, exclude);
-    std::vector<double> imp_stomp = std::get<0>(result);
-    std::vector<int> imp_stomp_index = std::get<1>(result);
+    result = modified_AAMP(data, window_size, period_starts, interval_length, exclude);
+    std::vector<double> imp_aamp = std::get<0>(result);
+    std::vector<int> imp_aamp_index = std::get<1>(result);
     end_time = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-    std::cout << "STOMP " << duration.count() << " ms" << std::endl;
+    std::cout << "AAMP " << duration.count() << " ms" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = interval_matrix_profile_STOMP(data, window_size, period_starts, interval_length, exclude);
+    result = BIMP(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_block = std::get<0>(result);
     std::vector<int> imp_block_index = std::get<1>(result);
     end_time = std::chrono::high_resolution_clock::now();
@@ -179,7 +179,7 @@ void parallel_time(const int nthreads)
 
 
     auto start_time = std::chrono::high_resolution_clock::now();
-    auto result = interval_matrix_profile_STOMP(data, window_size, period_starts, interval_length, exclude);
+    auto result = BIMP(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_block = std::get<0>(result);
     std::vector<int> imp_block_index = std::get<1>(result);
     auto end_time = std::chrono::high_resolution_clock::now();
@@ -195,7 +195,7 @@ void k_impact(const int k)
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0, 1);
 
-    const int n_year = 50;
+    const int n_year = 100;
     const int period_length = 365*24;
     std::vector<int> period_starts;
     for (int year = 0; year < n_year; ++year)
@@ -207,7 +207,7 @@ void k_impact(const int k)
         period_starts.push_back(year * period_length);
     }
 
-    const int window_size = 24*7;
+    const int window_size = 7*24;
     const int exclude = window_size;
     const int interval_length = 90*24; 
 
@@ -220,14 +220,16 @@ void k_impact(const int k)
     auto duration_block = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
     std::cout << "kNN BLOCK " << duration_block.count() << " ms" << std::endl;   
 
-
-    start_time = std::chrono::high_resolution_clock::now();
-    result = interval_matrix_profile_STOMP(data, window_size, period_starts, interval_length, exclude);
-    std::vector<double> imp_block_stomp = std::get<0>(result);
-    std::vector<int> imp_block_index_stomp = std::get<1>(result);
-    end_time = std::chrono::high_resolution_clock::now();
-    duration_block = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-    std::cout << "Block " << duration_block.count() << " ms" << std::endl;
+    if (k == 1)
+    {
+        start_time = std::chrono::high_resolution_clock::now();
+        result = BIMP(data, window_size, period_starts, interval_length, exclude);
+        std::vector<double> imp_block_aamp = std::get<0>(result);
+        std::vector<int> imp_block_index_aamp = std::get<1>(result);
+        end_time = std::chrono::high_resolution_clock::now();
+        duration_block = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+        std::cout << "Block " << duration_block.count() << " ms" << std::endl;
+    }
 }
 
 int main(int argc, char const *argv[])

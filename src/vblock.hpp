@@ -7,50 +7,23 @@
 #include <distance.hpp>
 #include <cfloat>
 
-enum block_type
-{
-    PARALLELOGRAM,
-    TRIANGLE,
-    POLYGON,
-    QUADRANGLE_WITHOUT_INITIAL_RECURRENCE,
-    QUADRANGLE_WITH_INITIAL_RECURRENCE,
-    RIGHT_TRUNCATED_PARALLELOGRAM
-};
-
-template <typename T>
-struct min_pair
-{
-    int index;
-    T value;
-};
-
-template <typename T>
-inline min_pair<T> min_pair_min2(min_pair<T> const &a, min_pair<T> const &b)
-{
-    return a.value < b.value ? a : b;
-}
-
-
-#pragma omp declare reduction(min_pair_min : min_pair<double> : omp_out = min_pair_min2(omp_out, omp_in)) \
-    initializer(omp_priv = {-1, DBL_MAX})
-
 /**
  * @file block.hpp
  */
 template <typename T, bool initialized = true>
-class block
+class vblock
 {
 public:
     using value_type = T;
     using pair_t = min_pair<T>;
-    std::function<void(block<T, initialized> *)> STOMP_method; // the pointer to the STOMP function
+    std::function<void(vblock<T, initialized> *)> STOMP_method; // the pointer to the STOMP function
     int ID;                                                    // ID of the block
-    block() = default;                                         // Default constructor
+    vblock() = default;                                         // Default constructor
 
     /**
      * @brief Constructor
      */
-    block(const int n,
+    vblock(const int n,
           const int m,
           const int exclude,
           const int i,
@@ -81,7 +54,7 @@ public:
             if (j + _width <= 0 and j + _height <= 0)
             {
                 // Case triangle
-                STOMP_method = &block<T>::STOMP_triangle;
+                STOMP_method = &vblock<T>::STOMP_triangle;
                 _type = TRIANGLE;
             }
             else if (j + _width > 0 and j + _height <= 0)
@@ -92,7 +65,7 @@ public:
                 // |        \
                 // |         \
                 // ------------
-                STOMP_method = &block<T, initialized>::STOMP_quadrangle_with_initial_recurrence;
+                STOMP_method = &vblock<T, initialized>::STOMP_quadrangle_with_initial_recurrence;
                 _type = QUADRANGLE_WITH_INITIAL_RECURRENCE;
             }
             else if (j + width <= 0 and j + height > 0)
@@ -103,7 +76,7 @@ public:
                 // |  \
                 //  \  \
                 //   ---
-                STOMP_method = &block<T, initialized>::STOMP_quadrangle_without_initial_recurrence;
+                STOMP_method = &vblock<T, initialized>::STOMP_quadrangle_without_initial_recurrence;
                 _type = QUADRANGLE_WITHOUT_INITIAL_RECURRENCE;
             }
             else if (j + _width > 0 and j + _height > 0)
@@ -113,25 +86,25 @@ public:
                 // |    \
                 //  \    \
                 //   -----
-                STOMP_method = &block<T, initialized>::STOMP_polygon;
+                STOMP_method = &vblock<T, initialized>::STOMP_polygon;
                 _type = POLYGON;
             }
         }
         else if (j + _width + _height > n) [[unlikely]]
         {
             // Case parallelogram truncated on the right
-            STOMP_method = &block<T, initialized>::STOMP_right_truncated_parallelogram;
+            STOMP_method = &vblock<T, initialized>::STOMP_right_truncated_parallelogram;
             _type = RIGHT_TRUNCATED_PARALLELOGRAM;
         }
         else [[likely]]
         {
             // Case parallelogram
-            STOMP_method = &block<T, initialized>::STOMP_parallelogram;
+            STOMP_method = &vblock<T, initialized>::STOMP_parallelogram;
             _type = PARALLELOGRAM;
         }
     }
 
-    block(const int n,
+    vblock(const int n,
           const int m,
           const int exclude,
           const int i,
@@ -162,38 +135,38 @@ public:
         {
             if (j + _width <= 0 and j + _height <= 0)
             {
-                STOMP_method = &block<T, initialized>::STOMP_triangle;
+                STOMP_method = &vblock<T, initialized>::STOMP_triangle;
                 _type = TRIANGLE;
             }
             else if (j + _width > 0 and j + _height <= 0)
             {
-                STOMP_method = &block<T, initialized>::STOMP_quadrangle_with_initial_recurrence;
+                STOMP_method = &vblock<T, initialized>::STOMP_quadrangle_with_initial_recurrence;
                 _type = QUADRANGLE_WITH_INITIAL_RECURRENCE;
             }
             else if (j + width <= 0 and j + height > 0)
             {
-                STOMP_method = &block<T, initialized>::STOMP_quadrangle_without_initial_recurrence;
+                STOMP_method = &vblock<T, initialized>::STOMP_quadrangle_without_initial_recurrence;
                 _type = QUADRANGLE_WITHOUT_INITIAL_RECURRENCE;
             }
             else if (j + _width > 0 and j + _height > 0)
             {
-                STOMP_method = &block<T, initialized>::STOMP_polygon;
+                STOMP_method = &vblock<T, initialized>::STOMP_polygon;
                 _type = POLYGON;
             }
         }
         else if (j + _width + _height > n) [[unlikely]]
         {
-            STOMP_method = &block<T, initialized>::STOMP_right_truncated_parallelogram;
+            STOMP_method = &vblock<T, initialized>::STOMP_right_truncated_parallelogram;
             _type = RIGHT_TRUNCATED_PARALLELOGRAM;
         }
         else [[likely]]
         {
-            STOMP_method = &block<T, initialized>::STOMP_parallelogram;
+            STOMP_method = &vblock<T, initialized>::STOMP_parallelogram;
             _type = PARALLELOGRAM;
         }
     }
 
-    block(const int n,
+    vblock(const int n,
           const int m,
           const int exclude,
           const int i,
@@ -222,40 +195,40 @@ public:
         {
             if (j + _width <= 0 and j + _height <= 0)
             {
-                STOMP_method = &block<T, initialized>::STOMP_triangle;
+                STOMP_method = &vblock<T, initialized>::STOMP_triangle;
                 _type = TRIANGLE;
             }
             else if (j + _width > 0 and j + _height <= 0)
             {
-                STOMP_method = &block<T, initialized>::STOMP_quadrangle_with_initial_recurrence;
+                STOMP_method = &vblock<T, initialized>::STOMP_quadrangle_with_initial_recurrence;
                 _type = QUADRANGLE_WITH_INITIAL_RECURRENCE;
             }
             else if (j + width <= 0 and j + height > 0)
             {
-                STOMP_method = &block<T, initialized>::STOMP_quadrangle_without_initial_recurrence;
+                STOMP_method = &vblock<T, initialized>::STOMP_quadrangle_without_initial_recurrence;
                 _type = QUADRANGLE_WITHOUT_INITIAL_RECURRENCE;
             }
             else if (j + _width > 0 and j + _height > 0)
             {
-                STOMP_method = &block<T, initialized>::STOMP_polygon;
+                STOMP_method = &vblock<T, initialized>::STOMP_polygon;
                 _type = POLYGON;
             }
         }
         else if (j + _width + _height > n) [[unlikely]]
         {
-            STOMP_method = &block<T, initialized>::STOMP_right_truncated_parallelogram;
+            STOMP_method = &vblock<T, initialized>::STOMP_right_truncated_parallelogram;
             _type = RIGHT_TRUNCATED_PARALLELOGRAM;
         }
         else [[likely]]
         {
-            STOMP_method = &block<T, initialized>::STOMP_parallelogram;
+            STOMP_method = &vblock<T, initialized>::STOMP_parallelogram;
             _type = PARALLELOGRAM;
         }
     }
     /**
      * @brief Destructor
      */
-    ~block()
+    ~vblock()
     {
         // Destructor
     }
@@ -358,10 +331,18 @@ private:
     inline void compute_row(const int start, const int end, int i, min_pair<T> &min)
     {
         const int global_i = _global_i + i;
-        int global_j = _global_j + start + i;
+        int global_j{_global_j + start + i};
         for (int j = start; j < end; ++j)
         {
-            update_row_element(j, global_i, global_j);
+            const T prev_data{this->time_series[global_i - 1] - this->time_series[global_j - 1]};
+            const T next_data{this->time_series[global_i + _m - 1] - this->time_series[global_j + _m - 1]};
+            // Update the row following the recurrence
+            this->row[j] += (next_data * next_data - prev_data * prev_data);
+            ++global_j;
+        }
+        global_j = _global_j + start + i;
+        for (int j = start; j < end; ++j)
+        {
             update_min(j, min, global_i, global_j);
             ++global_j;
         }
@@ -423,9 +404,15 @@ private:
             const T next_data{this->time_series[global_j + _m - 1] - this->time_series[_global_i + _m - 1]};
             // Update the row following the recurrence
             this->row[j] = this->initial_row[j] + (next_data * next_data - prev_data * prev_data);
-            update_min(j, min, _global_i, global_j);
             ++global_j;
         }
+        global_j = _global_j + start;
+        for (int j = start; j < end; ++j)
+        {
+            update_min(j, min, _global_i, _global_j + j);
+            ++global_j;
+        }
+
         this->local_min_row[0] = min;
     }
 
@@ -534,6 +521,11 @@ private:
                     const T prev_data{this->time_series[global_j - 1] - this->time_series[_global_i - 1]};
                     const T next_data{this->time_series[global_j + _m - 1] - this->time_series[_global_i + _m - 1]};
                     this->row[nb_left_elements + j] = this->initial_row[nb_left_elements + j] + (next_data * next_data - prev_data * prev_data);
+                    ++global_j;
+                }
+                global_j = _global_j + nb_left_elements + 1;
+                for (int j = 1; j < nb_right_elements; ++j)
+                {
                     update_min(nb_left_elements + j, min, _global_i, global_j);
                     ++global_j;
                 }

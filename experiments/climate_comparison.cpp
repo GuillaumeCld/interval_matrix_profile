@@ -83,7 +83,7 @@ auto daily_climate_series()
     std::cout << "IMP BF execution time: " << duration.count() << " ms" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = interval_matrix_profile_STOMP(data, window_size, period_starts, interval_length, exclude);
+    result = BIMP(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_stomp = std::get<0>(result);
     std::vector<int> imp_stomp_index = std::get<1>(result);
     end_time = std::chrono::high_resolution_clock::now();
@@ -160,7 +160,7 @@ auto hourly_climate_series()
     std::cout << "Interval Matrix Profile" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = interval_matrix_profile_STOMP(data, window_size, period_starts, interval_length, exclude);
+    result = BIMP(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_stomp = std::get<0>(result);
     end_time = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);

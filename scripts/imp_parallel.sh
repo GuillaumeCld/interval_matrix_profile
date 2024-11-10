@@ -9,7 +9,7 @@ min_threads=$1
 max_threads=$2
 output_file=$3
 
-> $output_file
+#> $output_file
 
 TIME1=0
 

@@ -20,6 +20,11 @@ add_executable(
     climate_pulse_imp.cpp
 )
 
+add_executable(
+    numerical_error
+    numerical_error.cpp
+)
+
 target_link_libraries(
     experiments
     OpenMP::OpenMP_CXX
@@ -30,6 +35,10 @@ target_link_libraries(
 )
 target_link_libraries(
     climate_pulse
+    OpenMP::OpenMP_CXX
+)
+target_link_libraries(
+    numerical_error
     OpenMP::OpenMP_CXX
 )
 
