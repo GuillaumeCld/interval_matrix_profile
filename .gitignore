@@ -1,14 +1,12 @@
 build/
 .vscode/settings.json
 
-Data/SST/*
-Data/ERA5_land/*
-Data/climate_pulse/*
 Data/benchmark
 Data/benchmark/*
+
 src/_*
-scripts/*.txt
-scripts/*.png
+
 scripts/Figures/*
 scripts/output_files/*
-notebooks/*.pdf
+
+notebooks/Figures/*

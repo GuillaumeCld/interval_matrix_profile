@@ -35,7 +35,7 @@ void m_impact(const int window_size)
 
 
     auto start_time = std::chrono::high_resolution_clock::now();
-    auto result = interval_matrix_profile_brute_force(data, window_size, period_starts, interval_length, exclude);
+    auto result = imp_bf(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp = std::get<0>(result);
     std::vector<int> imp_index = std::get<1>(result);
     auto end_time = std::chrono::high_resolution_clock::now();
@@ -82,7 +82,7 @@ void year_impact(int n_year)
     const int exclude = window_size;
 
     auto start_time = std::chrono::high_resolution_clock::now();
-    auto result = interval_matrix_profile_brute_force(data, window_size, period_starts, interval_length, exclude);
+    auto result = imp_bf(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp = std::get<0>(result);
     std::vector<int> imp_index = std::get<1>(result);
     auto end_time = std::chrono::high_resolution_clock::now();
@@ -129,7 +129,7 @@ void interval_impact(const int interval_length)
     const int exclude = window_size;
 
     auto start_time = std::chrono::high_resolution_clock::now();
-    auto result = interval_matrix_profile_brute_force(data, window_size, period_starts, interval_length, exclude);
+    auto result = imp_bf(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp = std::get<0>(result);
     std::vector<int> imp_index = std::get<1>(result);
     auto end_time = std::chrono::high_resolution_clock::now();
@@ -180,7 +180,7 @@ void period_length_impact(const int period_length)
     const int exclude = window_size;
 
     auto start_time = std::chrono::high_resolution_clock::now();
-    auto result = interval_matrix_profile_brute_force(data, window_size, period_starts, interval_length, exclude);
+    auto result = imp_bf(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp = std::get<0>(result);
     std::vector<int> imp_index = std::get<1>(result);
     auto end_time = std::chrono::high_resolution_clock::now();

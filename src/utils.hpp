@@ -21,7 +21,7 @@ void readFile(const char *filename, std::vector<T> &v, const char *format)
     T elem;
     while (!feof(file))
     {
-        fscanf(file, format, &elem);
+        auto out =  fscanf(file, format, &elem);
         v.push_back(elem);
     }
     v.pop_back();
@@ -64,7 +64,7 @@ auto build_season_vector(const char *filename, const int n)
     int elem;
     while (!feof(file))
     {
-        fscanf(file, "%d", &elem);
+        auto out = fscanf(file, "%d", &elem);
 
         if (iter % 2 == 0)
         {

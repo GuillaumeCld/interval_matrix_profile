@@ -1,10 +1,12 @@
 
 # Interval Matrix Profile
 
+This repository contains the implementation of the Interval Matrix Profile algorithm, and Seasonal Matrix Profile. The project includes various components such as tests, experiments, and Python bindings using Pybind11. The repository also provides case studies and experiments to demonstrate the application of the algorithm.
 
+## Building the project
 
+The project have been tested on gcc 10.3.0 / cmake 3.21.3 and gcc 13.1.0 / cmake 3.19.0
 
-## Building the project
 
 ### Building the python depanencies (Required for notebooks)
 
@@ -40,7 +42,6 @@ cmake ..
 ```sh
 make
 ```
-
 
 ## Running the experiments
 

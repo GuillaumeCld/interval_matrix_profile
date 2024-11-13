@@ -37,7 +37,7 @@ auto compute_cp(std::string folder)
 
     std::vector<double> double_data = std::vector<double>(data.begin(), data.end());
     auto start_time = std::chrono::high_resolution_clock::now();
-    auto result = interval_matrix_profile_brute_force(double_data, window_size, period_starts, interval_length, exclude);
+    auto result = imp_bf(double_data, window_size, period_starts, interval_length, exclude);
     std::vector<double> double_imp = std::get<0>(result);
     std::vector<float> imp = std::vector<float>(double_imp.begin(), double_imp.end());
     std::vector<int> imp_index = std::get<1>(result);
@@ -101,7 +101,7 @@ auto compute_era(bool daily)
 
     std::vector<double> double_data = std::vector<double>(data.begin(), data.end());
     auto start_time = std::chrono::high_resolution_clock::now();
-    auto result = interval_matrix_profile_brute_force(double_data, window_size, period_starts, interval_length, exclude);
+    auto result = imp_bf(double_data, window_size, period_starts, interval_length, exclude);
     std::vector<double> double_imp = std::get<0>(result);
     std::vector<float> imp = std::vector<float>(double_imp.begin(), double_imp.end());
     std::vector<int> imp_index = std::get<1>(result);
@@ -184,7 +184,7 @@ auto compute_era_dp(bool daily)
 
     std::vector<double> double_data = std::vector<double>(data.begin(), data.end());
     auto start_time = std::chrono::high_resolution_clock::now();
-    auto result = interval_matrix_profile_brute_force(double_data, window_size, period_starts, interval_length, exclude);
+    auto result = imp_bf(double_data, window_size, period_starts, interval_length, exclude);
     std::vector<double> double_imp = std::get<0>(result);
     std::vector<float> imp = std::vector<float>(double_imp.begin(), double_imp.end());
     std::vector<int> imp_index = std::get<1>(result);
@@ -314,7 +314,7 @@ auto compute_synthetic(const int n_year, const int window_size, const int interv
 
     std::vector<double> double_data = std::vector<double>(data.begin(), data.end());
     auto start_time = std::chrono::high_resolution_clock::now();
-    auto result = interval_matrix_profile_brute_force(double_data, window_size, period_starts, interval_length, exclude);
+    auto result = imp_bf(double_data, window_size, period_starts, interval_length, exclude);
     std::vector<double> double_imp = std::get<0>(result);
     std::vector<float> imp = std::vector<float>(double_imp.begin(), double_imp.end());
     std::vector<int> imp_index = std::get<1>(result);

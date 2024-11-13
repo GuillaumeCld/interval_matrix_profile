@@ -40,7 +40,7 @@ inline auto output_cast(std::pair<std::vector<T>, std::vector<int>> result)
 }
 
 template <typename T>
-inline auto matrix_profile_STOMP_wrapper(py::array_t<T> &time_series,
+inline auto matrix_profile_aamp_wrapper(py::array_t<T> &time_series,
                                          const int window_size,
                                          const int exclude,
                                          const int block_width,
@@ -48,13 +48,13 @@ inline auto matrix_profile_STOMP_wrapper(py::array_t<T> &time_series,
 {
 
     std::span<T> time_series_span = numpy_array_to_span(time_series);
-    auto result = matrix_profile_STOMP(time_series_span, window_size, block_width, block_height, exclude);
+    auto result = BAAMP(time_series_span, window_size, block_width, block_height, exclude);
 
     return output_cast(result);
 }
 
 template <typename T>
-auto interval_matrix_profile_STOMP_wrapper(py::array_t<T> &time_series,
+auto BIMP_wrapper(py::array_t<T> &time_series,
                                            const int window_size,
                                            py::array_t<int> const &period_starts,
                                            const int interval_length,
@@ -69,7 +69,7 @@ auto interval_matrix_profile_STOMP_wrapper(py::array_t<T> &time_series,
 }
 
 template <typename T>
-auto interval_matrix_profile_STOMP_knn_wrapper(py::array_t<T> &time_series,
+auto BIMP_knn_wrapper(py::array_t<T> &time_series,
                                                const int window_size,
                                                py::array_t<int> const &period_starts,
                                                const int interval_length,
@@ -126,7 +126,7 @@ auto imp_bf_wrapper(py::array_t<T> &time_series,
     std::span<T> time_series_span = numpy_array_to_span(time_series);
     std::span<int> period_starts_span = numpy_array_to_span(period_starts);
 
-    auto result = interval_matrix_profile_brute_force(time_series_span, window_size, period_starts_span, interval_length, exclude);
+    auto result = imp_bf(time_series_span, window_size, period_starts_span, interval_length, exclude);
     return output_cast(result);
 }
 
@@ -287,10 +287,10 @@ void bind_right_BIMP_kNN(py::module &m, const std::string &name)
 }
 
 template <typename T>
-void bind_matrix_profile_STOMP(py::module &m, const std::string &name)
+void bind_matrix_profile_aamp(py::module &m, const std::string &name)
 {
-    m.def(name.c_str(), matrix_profile_STOMP_wrapper<T>,
-          "Compute the Matrix Profile using the STOMP algorithm. The parameters are as follows:\n\
+    m.def(name.c_str(), matrix_profile_aamp_wrapper<T>,
+          "Compute the Matrix Profile using the BAAMP algorithm. The parameters are as follows:\n\
         time_series: numpy array, the time series data,\n\
         window_size: int, the size of the subsequences,\n\
         exclude: int, the size of the exclusion zone,\n\
@@ -304,10 +304,10 @@ void bind_matrix_profile_STOMP(py::module &m, const std::string &name)
 }
 
 template <typename T>
-void bind_interval_matrix_profile_STOMP(py::module &m, const std::string &name)
+void bind_BIMP(py::module &m, const std::string &name)
 {
-    m.def(name.c_str(), &interval_matrix_profile_STOMP_wrapper<T>,
-          "Compute the Interval Matrix Profile using the STOMP algorithm. The parameters are as follows:\n\
+    m.def(name.c_str(), &BIMP_wrapper<T>,
+          "Compute the Interval Matrix Profile using the BIMP algorithm. The parameters are as follows:\n\
         time_series: numpy array, the time series data,\n\
         window_size: int, the size of the subsequences,\n\
         period_starts: numpy array, an array with the starting index of each period,\n\
@@ -321,10 +321,10 @@ void bind_interval_matrix_profile_STOMP(py::module &m, const std::string &name)
 }
 
 template <typename T>
-void bind_interval_matrix_profile_STOMP_knn(py::module &m, const std::string &name)
+void bind_BIMP_knn(py::module &m, const std::string &name)
 {
-    m.def(name.c_str(), &interval_matrix_profile_STOMP_knn_wrapper<T>,
-          "Compute the Interval Matrix Profile using the STOMP algorithm. The parameters are as follows:\n\
+    m.def(name.c_str(), &BIMP_kNN_wrapper<T>,
+          "Compute the Interval Matrix Profile using the BIMP algorithm. The parameters are as follows:\n\
         time_series: numpy array, the time series data,\n\
         window_size: int, the size of the subsequences,\n\
         period_starts: numpy array, an array with the starting index of each period,\n\
@@ -341,12 +341,12 @@ void bind_interval_matrix_profile_STOMP_knn(py::module &m, const std::string &na
 
 PYBIND11_MODULE(libimp, m)
 {
-    m.doc() = "Pybind11 library for the Interval Matrix Profile (IMP). There is currently only the STOMP implementation for float and double data. It is parallel";
+    m.doc() = "Pybind11 library for the Interval Matrix Profile (IMP). There is currently only the BIMP implementation for float and double data. It is parallel";
 
-    bind_matrix_profile_STOMP<float>(m, "STOMP_float");
-    bind_matrix_profile_STOMP<double>(m, "STOMP_double");
-    bind_interval_matrix_profile_STOMP<float>(m, "imp_STOMP_float");
-    bind_interval_matrix_profile_STOMP<double>(m, "imp_STOMP_double");
+    bind_matrix_profile_aamp<float>(m, "mp_float");
+    bind_matrix_profile_aamp<double>(m, "mp_double");
+    bind_BIMP<float>(m, "BIMP_float");
+    bind_BIMP<double>(m, "BIMP_double");
 
     bind_BIMP_kNN<float>(m, "BIMP_kNN_float");
     bind_BIMP_kNN<double>(m, "BIMP_kNN_double");
