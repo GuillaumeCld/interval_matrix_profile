@@ -1,3 +1,4 @@
+# Usage: bash scripts/imp_parallel.sh 1 20 imp_parallel
 # Check if the correct number of arguments are provided
 if [ "$#" -ne 3 ]; then
     echo "Usage: $0 <min_threads> <max_threads> <output_file>"
@@ -10,6 +11,7 @@ max_threads=$2
 output_file=$3
 
 #> $output_file
+output_file="./scripts/output_files/${output_file}.txt"
 
 TIME1=0
 
