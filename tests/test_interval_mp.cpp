@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 #include "interval_matrix_profile.hpp"
+#include "bimp.hpp"
+#include "bimb_knn.hpp"
 #include "utils.hpp"
 #include <random> 
 
@@ -44,7 +46,7 @@ TEST(IntervalMatrixProfileTest, SameResult_bf_stomp_ini_sst)
     auto result_brute_force = interval_matrix_profile_brute_force(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_bf = std::get<0>(result_brute_force);
     std::vector<int> index_profile_bf = std::get<1>(result_brute_force);
-    auto result_stomp = interval_matrix_profile_STOMP_initialized(data, window_size, period_starts, interval_length, exclude);
+    auto result_stomp = BIMP_intialized(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_stomp = std::get<0>(result_stomp);
     std::vector<int> index_profile_stomp = std::get<1>(result_stomp);
 
@@ -67,7 +69,7 @@ TEST(IntervalMatrixProfileTest, SameResult_stomp_sst)
     readFile<int>("../Data/periods_start_sst.txt", period_starts, "%d");
 
     // Calculate the matrix profile using the three methods
-    auto result_stomp_init = interval_matrix_profile_STOMP_initialized(data, window_size, period_starts, interval_length, exclude);
+    auto result_stomp_init = BIMP_intialized(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_ini = std::get<0>(result_stomp_init);
     std::vector<int> index_profile_ini = std::get<1>(result_stomp_init);
     auto result_stomp = BIMP(data, window_size, period_starts, interval_length, exclude);

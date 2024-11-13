@@ -1,0 +1,15 @@
+name: imp
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - numpy
+  - pandas
+  - matplotlib
+  - plotly
+  - seaborn
+  - jupyter
+  - pybind11
+  - pip:
+    - kaleido

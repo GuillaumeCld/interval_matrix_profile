@@ -201,7 +201,7 @@ auto matrix_profile_STOMP(array_t &time_series, const int window_size, const int
                         // Store the block
                         current_blocks.at(block_id) = std::move(block);
                         // Compute the block
-                        current_blocks[block_id].STOMP();
+                        current_blocks[block_id].compute();
                         // retrieve the minimums per row
                         block_min_pair_per_row.at(block_id) = current_blocks.at(block_id).get_local_min_rows();
                     }
@@ -460,7 +460,7 @@ auto blockSTOMP(std::vector<T> &time_series, int window_size, int block_width, i
                            time_series);
 
             blocks[block_id] = std::move(block);
-            blocks[block_id].STOMP();
+            blocks[block_id].compute();
             // retrieve the minimums per row
             block_min_pair_per_row[block_id] = blocks[block_id].get_local_min_rows();
         }
@@ -590,7 +590,7 @@ auto blockSTOMP_v2(std::vector<T> &time_series, const int window_size, const int
                         // Store the block
                         current_blocks.at(block_id) = std::move(block);
                         // Compute the block
-                        current_blocks[block_id].STOMP();
+                        current_blocks[block_id].compute();
                         // retrieve the minimums per row
                         block_min_pair_per_row.at(block_id) = current_blocks.at(block_id).get_local_min_rows();
                     }
@@ -710,7 +710,7 @@ auto blockSTOMP_v3(std::vector<T> &time_series, int window_size, const int block
                                        time_series);
 
                         current_blocks[block_id] = std::move(block);
-                        current_blocks[block_id].STOMP();
+                        current_blocks[block_id].compute();
                         // retrieve the minimums per row
                         block_min_pair_per_row[block_id] = current_blocks[block_id].get_local_min_rows();
                     }
@@ -829,7 +829,7 @@ auto blockSTOMP_v4(std::vector<T> &time_series, int window_size, const int block
                                        time_series);
 
                         current_blocks[block_id] = std::move(block);
-                        current_blocks[block_id].STOMP();
+                        current_blocks[block_id].compute();
                         // retrieve the minimums per row
                         block_min_pair_per_row[block_id] = current_blocks[block_id].get_local_min_rows();
                     }
@@ -951,7 +951,7 @@ auto blockSTOMP_v5(std::vector<T> &time_series, int window_size, const int block
                                        initial_row,
                                        time_series);
                         current_blocks[block_id] = std::move(block);
-                        current_blocks[block_id].STOMP();
+                        current_blocks[block_id].compute();
                         // retrieve the minimums per row
                         block_min_pair_per_row[block_id] = current_blocks[block_id].get_local_min_rows();
                     }

@@ -1,4 +1,4 @@
-# Example: ash scripts/imp_m_impact.sh 1 45 imp_m_impact
+# Example: bash scripts/imp_m_impact.sh 1 45 imp_m_impact
 
 # Check if the correct number of arguments are provided
 if [ "$#" -ne 3 ]; then
@@ -29,7 +29,7 @@ do
     cat res_tmp
     TIME=$(grep "BF" res_tmp | awk '{print $2}')
     echo "$m,${TIME}" >> $bf_file
-    TIME=$(grep "STOMP" res_tmp | awk '{print $2}')
+    TIME=$(grep "aamp" res_tmp | awk '{print $2}')
     echo "$m,${TIME}" >> $stomp_file
     TIME=$(grep "BLOCK" res_tmp | awk '{print $2}')
     echo "$m,${TIME}" >> $block_file

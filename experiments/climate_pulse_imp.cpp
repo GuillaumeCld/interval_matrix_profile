@@ -9,6 +9,8 @@
 #include <matrix_profile.hpp>
 #include <seasonal_matrix_profile.hpp>
 #include <interval_matrix_profile.hpp>
+#include <bimp.hpp>
+#include <bimb_knn.hpp>
 #include <utils.hpp>
 
 using value_type = double;

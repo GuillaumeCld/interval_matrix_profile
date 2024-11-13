@@ -63,6 +63,106 @@ void compute_row(int start, int end, int i, min_pair<T> &min, int global_i_base,
     }
 }
 
+auto modified_AAMP(std::vector<T> &time_series,
+                    const int window_size,
+                    std::vector<int> const &period_starts,
+                    const int interval_length,
+                    const int exclude)
+{
+
+
+    const int n = time_series.size();
+    const int n_sequence = n - window_size + 1;
+    std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
+    std::vector<int> profile_index(n_sequence, 0);
+    const int half_interval = interval_length / 2;
+    bool is_periodic = window_size <= half_interval;
+    const int n_periods_i = period_starts.size();
+
+    std::vector<T> row_values(n_sequence, 0);
+
+    for (int i_period = 0; i_period < n_periods_i; ++i_period)
+    {
+        const int i_start = period_starts[i_period];
+        const int i_end = (i_period == n_periods_i - 1) ? n_sequence : period_starts[i_period + 1];
+        for (int i = i_start; i < i_end; ++i)
+        {
+            auto min = std::numeric_limits<T>::max();
+            int min_index = 0;
+            const int i_pos = i - i_start;
+            for (int j = n_sequence - 1; j >= 0; --j)
+            {
+                // Compute Euclidean distance for the current sequence
+                if (i == 0 or j == 0)
+                {
+                    // auto view = std::span(&time_series[i], window_size);
+                    // const auto distance = dotProduct(view, std::span(&time_series[j], window_size));
+                    row_values[j] = 0;
+                }
+                else
+                {
+                    const auto prev_data{time_series[i - 1] - time_series[j - 1]};
+                    const auto next_data{time_series[i + window_size - 1] - time_series[j + window_size - 1]};
+                    const auto distance = row_values[j - 1] + (next_data * next_data - prev_data * prev_data);
+                    row_values[j] = distance;
+                }
+            }
+            for (int j_period = 0; j_period < n_periods_i; ++j_period)
+            {
+                const int j_start = std::max(period_starts[j_period] + i_pos - half_interval, 0);
+                const int j_end = std::min(period_starts[j_period] + i_pos + half_interval + 1, n_sequence);
+                for (int j = j_start; j < j_end; ++j)
+                {
+                    // Compute Euclidean distance for the current sequence
+                    const auto distance = row_values[j];
+                    if (distance < min and (j < i - exclude or j > i + exclude))
+                    {
+                        min = distance;
+                        min_index = j;
+                    }
+                }
+            }
+
+            if (i_end - i <= half_interval)
+            {
+                const int j_start = 0;
+                const int j_end = half_interval - (i_end - i) + 1;
+                for (int j = j_start; j < j_end; ++j)
+                {
+                    const auto distance = row_values[j];
+                    if (distance < min and (j < i - exclude or j > i + exclude))
+                    {
+                        min = distance;
+                        min_index = j;
+                    }
+                }
+            }
+            if (is_periodic and i - i_start < half_interval)
+            {
+
+                const int j_start = n + i_pos - half_interval;
+                const int j_end = n_sequence;
+
+                for (int j = j_start; j < j_end; ++j)
+                {
+                    // Compute Euclidean distance for the current sequence
+                    const auto distance = row_values[j];
+                    if (distance < min and (j < i - exclude or j > i + exclude))
+                    {
+                        min = distance;
+                        min_index = j;
+                    }
+                }
+            }
+
+            matrix_profile[i] = min;
+            profile_index[i] = min_index;
+        }
+    }
+
+    return std::make_pair(matrix_profile, profile_index);
+}
+
 int main()
 {
     int start = 0;

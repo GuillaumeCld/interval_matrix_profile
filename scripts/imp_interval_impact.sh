@@ -1,4 +1,4 @@
-# Example: ash scripts/imp_m_impact.sh 1 45 imp_m_impact
+# Example: bash scripts/imp_interval_impact.sh 50 500 imp_interval_impact
 
 # Check if the correct number of arguments are provided
 if [ "$#" -ne 3 ]; then
@@ -28,7 +28,7 @@ do
     cat res_tmp
     TIME=$(grep "BF" res_tmp | awk '{print $2}')
     echo "$size,${TIME}" >> $bf_file
-    TIME=$(grep "STOMP" res_tmp | awk '{print $2}')
+    TIME=$(grep "AAMP" res_tmp | awk '{print $2}')
     echo "$size,${TIME}" >> $stomp_file
     TIME=$(grep "BLOCK" res_tmp | awk '{print $2}')
     echo "$size,${TIME}" >> $block_file

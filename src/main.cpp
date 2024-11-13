@@ -9,6 +9,8 @@
 #include <matrix_profile.hpp>
 #include <seasonal_matrix_profile.hpp>
 #include <interval_matrix_profile.hpp>
+#include <bimp.hpp>
+#include <bimb_knn.hpp>
 #include <utils.hpp>
 
 using value_type = double;
@@ -406,7 +408,7 @@ auto test_climate_series()
   // std::cout << "IMP STOMP execution time: " << duration.count() << " ms" << std::endl;
 
   auto start_time = std::chrono::high_resolution_clock::now();
-  auto result = interval_matrix_profile_STOMP_initialized(data, window_size, period_starts, interval_length, exclude);
+  auto result = BIMP_intialized(data, window_size, period_starts, interval_length, exclude);
   std::vector<double> imp_stomp = std::get<0>(result);
   auto end_time = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);

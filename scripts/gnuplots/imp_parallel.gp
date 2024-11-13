@@ -6,7 +6,7 @@ file = ARG1
 
 
 # Set the terminal type and output file if needed
-set terminal pdfcairo size 10in,6in enhanced font 'Latin Modern Roman,26'
+set terminal pdfcairo size 10in,5in enhanced font 'Latin Modern Roman,26'
 set output 'scripts/Figures/imp_parallel.pdf'
 
 

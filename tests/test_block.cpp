@@ -71,7 +71,7 @@ TEST_F(BlockTest, Parallelogram)
     ASSERT_EQ(block.get_type(), PARALLELOGRAM) << "Block type is not 'parallelogram'";
 
     // Call the STOMP method
-    block.STOMP();
+    block.compute();
 
     std::vector<double> block_row = block.get_row();
     std::vector<min_pair<double>> block_local_min_row = block.get_local_min_rows();
@@ -142,7 +142,7 @@ TEST_F(BlockTest, Triangle)
     // Assert if the block type is correct
     ASSERT_EQ(block.get_type(), TRIANGLE) << "Block type is not 'triangle'";
     // Execute
-    block.STOMP();
+    block.compute();
     std::vector<double> block_row = block.get_row();
     std::vector<min_pair<double>> block_local_min_row = block.get_local_min_rows();
     // Verify
@@ -219,7 +219,7 @@ TEST_F(BlockTest, Polygon)
     // Assert if the block type is correct
     ASSERT_EQ(block.get_type(), POLYGON) << "Block type is not 'polygon'";
     // Call the STOMP method
-    // block.STOMP();
+    // block.compute();
     std::vector<double> block_row = block.get_row();
     std::vector<min_pair<double>> block_local_min_row = block.get_local_min_rows();
 
@@ -290,7 +290,7 @@ TEST_F(BlockTest, QuandrangleWoInitialize)
     // Assert if the block type is correct
     ASSERT_EQ(block.get_type(), QUADRANGLE_WITHOUT_INITIAL_RECURRENCE) << "Block type is not 'quadrangle_without_initial_recurrence'";
     // Call the STOMP method
-    block.STOMP();
+    block.compute();
     std::vector<double> block_row = block.get_row();
     std::vector<min_pair<double>> block_local_min_row = block.get_local_min_rows();
 
@@ -378,7 +378,7 @@ TEST_F(BlockTest, QuandrangleWithInitialize)
     // Assert if the block type is correct
     ASSERT_EQ(block.get_type(), QUADRANGLE_WITH_INITIAL_RECURRENCE) << "Block type is not 'quadrangle_with_initial_recurrence'";
     // Call the STOMP method
-    block.STOMP();
+    block.compute();
     std::vector<double> block_row = block.get_row();
     std::vector<min_pair<double>> block_local_min_row = block.get_local_min_rows();
 
@@ -453,7 +453,7 @@ TEST_F(BlockTest, RightTruncatedParallelogram)
     ASSERT_EQ(block.get_type(), RIGHT_TRUNCATED_PARALLELOGRAM) << "Block type is not 'right_truncated_parallelogram'";
 
     // Call the STOMP method
-    block.STOMP();
+    block.compute();
 
     std::vector<double> block_row = block.get_row();
     std::vector<min_pair<double>> block_local_min_row = block.get_local_min_rows();

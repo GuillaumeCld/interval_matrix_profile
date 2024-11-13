@@ -16,7 +16,7 @@ class vblock
 public:
     using value_type = T;
     using pair_t = min_pair<T>;
-    std::function<void(vblock<T, initialized> *)> STOMP_method; // the pointer to the STOMP function
+    std::function<void(vblock<T, initialized> *)> compute_method; // the pointer to the compute function
     int ID;                                                    // ID of the block
     vblock() = default;                                         // Default constructor
 
@@ -54,7 +54,7 @@ public:
             if (j + _width <= 0 and j + _height <= 0)
             {
                 // Case triangle
-                STOMP_method = &vblock<T>::STOMP_triangle;
+                compute_method = &vblock<T>::compute_triangle;
                 _type = TRIANGLE;
             }
             else if (j + _width > 0 and j + _height <= 0)
@@ -65,7 +65,7 @@ public:
                 // |        \
                 // |         \
                 // ------------
-                STOMP_method = &vblock<T, initialized>::STOMP_quadrangle_with_initial_recurrence;
+                compute_method = &vblock<T, initialized>::compute_quadrangle_with_initial_recurrence;
                 _type = QUADRANGLE_WITH_INITIAL_RECURRENCE;
             }
             else if (j + width <= 0 and j + height > 0)
@@ -76,7 +76,7 @@ public:
                 // |  \
                 //  \  \
                 //   ---
-                STOMP_method = &vblock<T, initialized>::STOMP_quadrangle_without_initial_recurrence;
+                compute_method = &vblock<T, initialized>::compute_quadrangle_without_initial_recurrence;
                 _type = QUADRANGLE_WITHOUT_INITIAL_RECURRENCE;
             }
             else if (j + _width > 0 and j + _height > 0)
@@ -86,20 +86,20 @@ public:
                 // |    \
                 //  \    \
                 //   -----
-                STOMP_method = &vblock<T, initialized>::STOMP_polygon;
+                compute_method = &vblock<T, initialized>::compute_polygon;
                 _type = POLYGON;
             }
         }
         else if (j + _width + _height > n) [[unlikely]]
         {
             // Case parallelogram truncated on the right
-            STOMP_method = &vblock<T, initialized>::STOMP_right_truncated_parallelogram;
+            compute_method = &vblock<T, initialized>::compute_right_truncated_parallelogram;
             _type = RIGHT_TRUNCATED_PARALLELOGRAM;
         }
         else [[likely]]
         {
             // Case parallelogram
-            STOMP_method = &vblock<T, initialized>::STOMP_parallelogram;
+            compute_method = &vblock<T, initialized>::compute_parallelogram;
             _type = PARALLELOGRAM;
         }
     }
@@ -135,33 +135,33 @@ public:
         {
             if (j + _width <= 0 and j + _height <= 0)
             {
-                STOMP_method = &vblock<T, initialized>::STOMP_triangle;
+                compute_method = &vblock<T, initialized>::compute_triangle;
                 _type = TRIANGLE;
             }
             else if (j + _width > 0 and j + _height <= 0)
             {
-                STOMP_method = &vblock<T, initialized>::STOMP_quadrangle_with_initial_recurrence;
+                compute_method = &vblock<T, initialized>::compute_quadrangle_with_initial_recurrence;
                 _type = QUADRANGLE_WITH_INITIAL_RECURRENCE;
             }
             else if (j + width <= 0 and j + height > 0)
             {
-                STOMP_method = &vblock<T, initialized>::STOMP_quadrangle_without_initial_recurrence;
+                compute_method = &vblock<T, initialized>::compute_quadrangle_without_initial_recurrence;
                 _type = QUADRANGLE_WITHOUT_INITIAL_RECURRENCE;
             }
             else if (j + _width > 0 and j + _height > 0)
             {
-                STOMP_method = &vblock<T, initialized>::STOMP_polygon;
+                compute_method = &vblock<T, initialized>::compute_polygon;
                 _type = POLYGON;
             }
         }
         else if (j + _width + _height > n) [[unlikely]]
         {
-            STOMP_method = &vblock<T, initialized>::STOMP_right_truncated_parallelogram;
+            compute_method = &vblock<T, initialized>::compute_right_truncated_parallelogram;
             _type = RIGHT_TRUNCATED_PARALLELOGRAM;
         }
         else [[likely]]
         {
-            STOMP_method = &vblock<T, initialized>::STOMP_parallelogram;
+            compute_method = &vblock<T, initialized>::compute_parallelogram;
             _type = PARALLELOGRAM;
         }
     }
@@ -195,33 +195,33 @@ public:
         {
             if (j + _width <= 0 and j + _height <= 0)
             {
-                STOMP_method = &vblock<T, initialized>::STOMP_triangle;
+                compute_method = &vblock<T, initialized>::compute_triangle;
                 _type = TRIANGLE;
             }
             else if (j + _width > 0 and j + _height <= 0)
             {
-                STOMP_method = &vblock<T, initialized>::STOMP_quadrangle_with_initial_recurrence;
+                compute_method = &vblock<T, initialized>::compute_quadrangle_with_initial_recurrence;
                 _type = QUADRANGLE_WITH_INITIAL_RECURRENCE;
             }
             else if (j + width <= 0 and j + height > 0)
             {
-                STOMP_method = &vblock<T, initialized>::STOMP_quadrangle_without_initial_recurrence;
+                compute_method = &vblock<T, initialized>::compute_quadrangle_without_initial_recurrence;
                 _type = QUADRANGLE_WITHOUT_INITIAL_RECURRENCE;
             }
             else if (j + _width > 0 and j + _height > 0)
             {
-                STOMP_method = &vblock<T, initialized>::STOMP_polygon;
+                compute_method = &vblock<T, initialized>::compute_polygon;
                 _type = POLYGON;
             }
         }
         else if (j + _width + _height > n) [[unlikely]]
         {
-            STOMP_method = &vblock<T, initialized>::STOMP_right_truncated_parallelogram;
+            compute_method = &vblock<T, initialized>::compute_right_truncated_parallelogram;
             _type = RIGHT_TRUNCATED_PARALLELOGRAM;
         }
         else [[likely]]
         {
-            STOMP_method = &vblock<T, initialized>::STOMP_parallelogram;
+            compute_method = &vblock<T, initialized>::compute_parallelogram;
             _type = PARALLELOGRAM;
         }
     }
@@ -258,11 +258,11 @@ public:
     }
 
     /**
-     * @brief Compute the minimum per row in the block using the STOMP procedure
+     * @brief Compute the minimum per row in the block using the compute procedure
      */
-    inline void STOMP()
+    inline void compute()
     {
-        STOMP_method(this);
+        compute_method(this);
     }
 
     void print(std::ostream &out)
@@ -419,7 +419,7 @@ private:
     /**
      * @brief Compute the minimum per row in the block in the parallelogram case
      */
-    inline void STOMP_parallelogram()
+    inline void compute_parallelogram()
     {
         min_pair<T> min = this->local_min_row[0];
         // Initialize the first row
@@ -471,7 +471,7 @@ private:
     /**
      * @brief Compute the minimum per row in the block in the triangle case
      */
-    inline void STOMP_triangle()
+    inline void compute_triangle()
     {
         const int first_line = -(_global_j + _width) + 1;
         const int elem_per_row{1};
@@ -492,7 +492,7 @@ private:
     /**
      * @brief Compute the minimum per row in the block in the polygon case
      */
-    inline void STOMP_polygon()
+    inline void compute_polygon()
     {
 
         const int nb_left_elements{-_global_j};
@@ -572,7 +572,7 @@ private:
     /**
      * @brief Compute the minimum per row in the block in the quadrangle case without initial recurrence
      */
-    inline void STOMP_quadrangle_without_initial_recurrence()
+    inline void compute_quadrangle_without_initial_recurrence()
     {
         const int first_line{1 - (_global_j + _width)};
         // Part of the parallelogram on the left of the trucation
@@ -606,7 +606,7 @@ private:
     /**
      * @brief Compute the minimum per row in the block in the quadrangle case with initial recurrence
      */
-    inline void STOMP_quadrangle_with_initial_recurrence()
+    inline void compute_quadrangle_with_initial_recurrence()
     {
         const int elem_per_row{_width + _global_j};
         int current_start{_width - elem_per_row};
@@ -643,7 +643,7 @@ private:
     /**
      * @brief Compute the minimum per row in the block in the right truncated parallelogram case
      */
-    inline void STOMP_right_truncated_parallelogram()
+    inline void compute_right_truncated_parallelogram()
     {
         const int i_max{std::min(_n - _global_i, _height)};
         int j_max{std::min(_n - _global_j, _width)};

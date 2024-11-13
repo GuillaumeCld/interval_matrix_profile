@@ -1,4 +1,4 @@
-# Example: ash scripts/imp_m_impact.sh 1 45 imp_m_impact
+# Example: bash scripts/imp_m_impact.sh 1 45 imp_m_impact
 
 # Check if the correct number of arguments are provided
 if [ "$#" -ne 3 ]; then

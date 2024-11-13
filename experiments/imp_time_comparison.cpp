@@ -7,6 +7,8 @@
 #include <span>
 #include <fstream>
 #include <interval_matrix_profile.hpp>
+#include <bimp.hpp>
+#include <bimb_knn.hpp>
 #include <utils.hpp>
 
 void m_impact(const int window_size)
@@ -49,7 +51,7 @@ void m_impact(const int window_size)
     std::cout << "aamp " << duration.count() << " ms" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = BIMP(data, window_size, period_starts, interval_length, exclude);
+    result = vBIMP(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_block = std::get<0>(result);
     std::vector<int> imp_block_index = std::get<1>(result);
     end_time = std::chrono::high_resolution_clock::now();
@@ -96,7 +98,7 @@ void year_impact(int n_year)
     std::cout << "aamp " << duration.count() << " ms" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = BIMP(data, window_size, period_starts, interval_length, exclude);
+    result = vBIMP(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_block = std::get<0>(result);
     std::vector<int> imp_block_index = std::get<1>(result);
     end_time = std::chrono::high_resolution_clock::now();
@@ -143,7 +145,7 @@ void interval_impact(const int interval_length)
     std::cout << "AAMP " << duration.count() << " ms" << std::endl;
 
     start_time = std::chrono::high_resolution_clock::now();
-    result = BIMP(data, window_size, period_starts, interval_length, exclude);
+    result = vBIMP(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_block = std::get<0>(result);
     std::vector<int> imp_block_index = std::get<1>(result);
     end_time = std::chrono::high_resolution_clock::now();
@@ -151,6 +153,57 @@ void interval_impact(const int interval_length)
     std::cout << "BLOCK " << duration.count() << " ms" << std::endl;
 }
 
+void period_length_impact(const int period_length)
+{
+
+    std::vector<double> data;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0, 1);
+
+    const int n_year = 100;
+    const int interval_length = 90;
+    std::vector<int> period_starts;
+    for (int year = 0; year < n_year; ++year)
+    {
+        for (int i = 0; i < period_length; ++i)
+        {
+            data.push_back(dis(gen));
+        }
+        period_starts.push_back(year * period_length);
+    }
+
+    std::cout << "Period length " << period_length << std::endl;
+    std::cout << "Data size " << data.size() << std::endl;
+
+    const int window_size = 7;
+    const int exclude = window_size;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto result = interval_matrix_profile_brute_force(data, window_size, period_starts, interval_length, exclude);
+    std::vector<double> imp = std::get<0>(result);
+    std::vector<int> imp_index = std::get<1>(result);
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    std::cout << "BF " << duration.count() << " ms" << std::endl;
+
+    start_time = std::chrono::high_resolution_clock::now();
+    result = modified_AAMP(data, window_size, period_starts, interval_length, exclude);
+    std::vector<double> imp_aamp = std::get<0>(result);
+    std::vector<int> imp_aamp_index = std::get<1>(result);
+    end_time = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    std::cout << "AAMP " << duration.count() << " ms" << std::endl;
+
+
+    start_time = std::chrono::high_resolution_clock::now();
+    result = vBIMP(data, window_size, period_starts, interval_length, exclude);
+    std::vector<double> imp_block = std::get<0>(result);
+    std::vector<int> imp_block_index = std::get<1>(result);
+    end_time = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    std::cout << "BLOCK " << duration.count() << " ms" << std::endl;
+}
 
 void parallel_time(const int nthreads)
 {
@@ -179,7 +232,7 @@ void parallel_time(const int nthreads)
 
 
     auto start_time = std::chrono::high_resolution_clock::now();
-    auto result = BIMP(data, window_size, period_starts, interval_length, exclude);
+    auto result = vBIMP(data, window_size, period_starts, interval_length, exclude);
     std::vector<double> imp_block = std::get<0>(result);
     std::vector<int> imp_block_index = std::get<1>(result);
     auto end_time = std::chrono::high_resolution_clock::now();
@@ -223,7 +276,7 @@ void k_impact(const int k)
     if (k == 1)
     {
         start_time = std::chrono::high_resolution_clock::now();
-        result = BIMP(data, window_size, period_starts, interval_length, exclude);
+        result = vBIMP(data, window_size, period_starts, interval_length, exclude);
         std::vector<double> imp_block_aamp = std::get<0>(result);
         std::vector<int> imp_block_index_aamp = std::get<1>(result);
         end_time = std::chrono::high_resolution_clock::now();
@@ -265,6 +318,11 @@ int main(int argc, char const *argv[])
     {
         const int k = std::atoi(argv[2]);
         k_impact(k);
+    }
+    else if (test == 6)
+    {
+        const int period_length = std::atoi(argv[2]);
+        period_length_impact(period_length);
     }
     else
     {

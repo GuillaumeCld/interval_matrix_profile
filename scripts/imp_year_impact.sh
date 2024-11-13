@@ -1,4 +1,4 @@
-# Example: ash scripts/imp_m_impact.sh 1 45 imp_m_impact
+# Example: bash scripts/imp_year_impact.sh 20 200 imp_year_impact
 
 # Check if the correct number of arguments are provided
 if [ "$#" -ne 3 ]; then
@@ -22,14 +22,14 @@ echo "m,Time" > $stomp_file
 echo "m,Time" > $block_file
 
 # Loop to run the experiment 20 times with different thread numbers
-for nyear in $(seq $min_year 20 $max_year)
+for nyear in $(seq $min_year 50 $max_year)
 do
     echo "Running experiment $nyear"
     taskset -c 1 ./build/experiments/imp_time 2 $nyear > res_tmp
     cat res_tmp
     TIME=$(grep "BF" res_tmp | awk '{print $2}')
     echo "$nyear,${TIME}" >> $bf_file
-    TIME=$(grep "STOMP" res_tmp | awk '{print $2}')
+    TIME=$(grep "aamp" res_tmp | awk '{print $2}')
     echo "$nyear,${TIME}" >> $stomp_file
     TIME=$(grep "BLOCK" res_tmp | awk '{print $2}')
     echo "$nyear,${TIME}" >> $block_file
