@@ -3,16 +3,17 @@
 
 This repository contains the implementation of the Interval Matrix Profile algorithm, and Seasonal Matrix Profile. The project includes various components such as tests, experiments, and Python bindings using Pybind11. The repository also provides case studies and experiments to demonstrate the application of the algorithm.
 
-## Building the project
+## Build the project
 
-The project have been tested on gcc 10.3.0 / cmake 3.21.3 and gcc 13.1.0 / cmake 3.19.0
+The project have been tested on gcc 13.1.0 / cmake 3.19.0 and  gcc 10.3.0 / cmake 3.21.3.
 
 
-### Building the python depanencies (Required for notebooks)
+### Build the python dependencies (Required for the notebooks)
 
 Creating the python environment with conda
 ```sh
  conda env create -f environment.yml
+ conda activate imp
 ```
 Add the environment to jupyter kernels
 ```sh
@@ -20,7 +21,7 @@ python -m ipykernel install --user --name imp --display-name "Python (imp)"
 ```
 
 
-### Build with CMake
+### Build the sources
 
 1. Create a build directory:
 ```sh
@@ -28,10 +29,12 @@ mkdir build
 cd build
 ```
 2.  Setup the CMake
-    With ccmake or directly in the CMakeLists.txt, you can steup which compentent to compile:
+    With ccmake or directly in the CMakeLists.txt, you can set which components to compile:
     - tests
     - experiments
-    - Python binding with Pybind11
+    - Python binding with [Pybind11](https://github.com/pybind/pybind11)
+
+If building the python binding be sure to be in the python environment.
 
 3. Run CMake to configure the project:
 ```sh
@@ -43,10 +46,10 @@ cmake ..
 make
 ```
 
-## Running the experiments
+## Run the experiments
 
-The experiments are in the ~experiments/~ folder. 
-The scripts to run the  experiments are in ~scripts/~, the ~all.sh~ run the scripts with the paper configuration.
+The experiments are in the /experiments/ folder. 
+The scripts to run the experiments are in /scripts/, the /all.sh/ script run the scripts with the paper configuration.
 ```sh
 bash scripts/all.sh
 ```
@@ -62,14 +65,14 @@ cd build
 
 ## Case studies with the notebooks 
 
-The Climate Pulse is available in ~Data/climate_pulse~ or directly downloable from [Climate Pulse](https://pulse.climate.copernicus.eu/).
+The Climate Pulse is available in /Data/climate_pulse/ or directly downloadable from [Climate Pulse](https://pulse.climate.copernicus.eu/).
 
-The Mediterannean sea surface temperature data is available in ~Data/SST~.
+The Mediterranean sea surface temperature data is available in /Data/SST/.
 
-The daily and hourly data from ERA5_land are availlables in ~Data/ERA5_land~.
+The daily and hourly data from ERA5_land are availlable in /Data/ERA5_land/.
 
-The case studies of the paper can be found in the folder ~notebooks/~.
+The case studies of the paper can be found in the folder /notebooks//.
 
 - [Climate Pulse SST](notebooks/climate_pulse_SST_2024.ipynb)
 - [Climate Pulse T2M (TAS)](notebooks/climate_pulse_T2M_2023.ipynb)
-- [Mediterranean SST](medi_sst_pybind.ipynb)
+- [Mediterranean SST](notebooks/medi_sst_pybind.ipynb)

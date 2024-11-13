@@ -13,7 +13,18 @@
 #include "block.hpp"
 #include "vblock.hpp"
 
-
+/**
+ * @brief Interval Matrix Profile algorithm using the brute force procedure.
+ * 
+ * @tparam array_value_t 
+ * @tparam array_index_t 
+ * @param time_series 
+ * @param window_size 
+ * @param period_starts 
+ * @param interval_length 
+ * @param exclude 
+ * @return auto 
+ */
 template <typename array_value_t, typename array_index_t>
 auto imp_bf(array_value_t &time_series,
                                          const int window_size,
@@ -109,7 +120,19 @@ auto imp_bf(array_value_t &time_series,
 
 
 
-
+/**
+ * @brief Interval Matrix Profile algorithm using the modified AAMP procedure, which computes the matrix profile then keeps the valid values.
+ * 
+ * @tparam array_value_t 
+ * @tparam array_index_t 
+ * @param time_series 
+ * @param window_size 
+ * @param period_starts 
+ * @param interval_length 
+ * @param exclude 
+ * @param k 
+ * @return auto 
+ */
 template <typename array_value_t, typename array_index_t>
 auto modified_AAMP(array_value_t &time_series,
                     const int window_size,
@@ -216,7 +239,19 @@ auto modified_AAMP(array_value_t &time_series,
 
 
 
-
+/** 
+ * @brief Interval Matrix Profile algorithm using the brute force procedure with k nearest neighbors.
+ * 
+ * @tparam array_value_t 
+ * @tparam array_index_t 
+ * @param time_series 
+ * @param window_size 
+ * @param period_starts 
+ * @param interval_length 
+ * @param exclude 
+ * @param k 
+ * @return auto 
+ */
 template <typename array_value_t, typename array_index_t>
 auto imp_bf_knn(array_value_t &time_series,
                                              const int window_size,
@@ -361,7 +396,18 @@ auto imp_bf_knn(array_value_t &time_series,
 
 
 
-
+/**
+ * @brief Compute the z-normalized Interval Matrix Profile using the brute force procedure.
+ * 
+ * @tparam array_value_t 
+ * @tparam array_index_t 
+ * @param time_series 
+ * @param window_size 
+ * @param period_starts 
+ * @param interval_length 
+ * @param exclude 
+ * @return auto 
+ */
 template <typename array_value_t, typename array_index_t>
 auto z_normalized_IMP_bf(array_value_t &time_series,
                                          const int window_size,
@@ -451,6 +497,19 @@ auto z_normalized_IMP_bf(array_value_t &time_series,
 }
 
 
+/**
+ * @brief Interval Matrix Profile algorithm using the brute force procedure with traditional k nearest neighbors.
+ * 
+ * @tparam array_value_t 
+ * @tparam array_index_t 
+ * @param time_series 
+ * @param window_size 
+ * @param period_starts 
+ * @param interval_length 
+ * @param exclude 
+ * @param k 
+ * @return auto 
+ */
 template <typename array_value_t, typename array_index_t>
 auto interval_matrix_profile_brute_force_bad_NN(array_value_t &time_series,
                                          const int window_size,

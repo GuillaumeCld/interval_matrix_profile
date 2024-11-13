@@ -1,20 +1,13 @@
-# Example: bash scripts/imp_m_impact.sh 1 45 imp_m_impact
+# Usage: bash scripts/imp_k_impact.sh imp_k_impact
 
 # Check if the correct number of arguments are provided
 if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <min_k> <max_k> <output_file>"
+    echo "Usage: $0  <output_file>"
     exit 1
 fi
 export OMP_NUM_THREADS=1
-# Assign input parameters to variables
-min_k=$1
-max_k=$2
-output_file=$3
-
 # Create the output files
-bf_file="./scripts/output_files/${output_file}_bf.txt"
-stomp_file="./scripts/output_files/${output_file}_stomp.txt"
-block_file="./scripts/output_files/${output_file}_block.txt"
+block_file="./scripts/output_files/${$3}_block.txt"
 
 echo "k,Time" > $block_file
 

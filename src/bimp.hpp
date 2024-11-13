@@ -121,6 +121,18 @@ auto BIMP(array_value_t &time_series,
     return std::make_pair(matrix_profile, profile_index);
 }
 
+/**
+ * @brief Compute the Interval Matrix Profile and index with the Block Interval Matrix Profile algorithm (BIMP) vith vectorized block.
+ * 
+ * @tparam array_value_t 
+ * @tparam array_index_t 
+ * @param time_series the time series
+ * @param window_size the susbsequence length (m in the paper)
+ * @param period_starts the starting index of each period (in order)
+ * @param interval_length the length of the interval (L in the paper)
+ * @param exclude the number of excluded points (e in the paper)
+ * @return pair of matrix profile and profile index 
+ */
 template <typename array_value_t, typename array_index_t>
 auto vBIMP(array_value_t &time_series,
                                    const int window_size,
@@ -220,7 +232,18 @@ auto vBIMP(array_value_t &time_series,
     return std::make_pair(matrix_profile, profile_index);
 }
 
-
+/**
+ * @brief Compute the left Interval Matrix Profile and index with BIMP 
+ * 
+ * @tparam array_value_t 
+ * @tparam array_index_t 
+ * @param time_series 
+ * @param window_size 
+ * @param period_starts 
+ * @param interval_length 
+ * @param exclude 
+ * @return auto 
+ */
 template <typename array_value_t, typename array_index_t>
 auto left_BIMP(array_value_t &time_series,
                 const int window_size,
@@ -320,6 +343,18 @@ auto left_BIMP(array_value_t &time_series,
     return std::make_pair(matrix_profile, profile_index);
 }
 
+/**
+ * @brief Compute the right Interval Matrix Profile and index with BIMP
+ * 
+ * @tparam array_value_t 
+ * @tparam array_index_t 
+ * @param time_series 
+ * @param window_size 
+ * @param period_starts 
+ * @param interval_length 
+ * @param exclude 
+ * @return auto 
+ */
 template <typename array_value_t, typename array_index_t>
 auto right_BIMP(array_value_t &time_series,
                 const int window_size,

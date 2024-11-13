@@ -10,7 +10,20 @@
 #include "distance.hpp"
 #include "vblock.hpp"
 
-
+/**
+ * @brief Compute the ckNN IMP with BIMP
+ * 
+ * @tparam array_value_t 
+ * @tparam array_index_t 
+ * @param time_series 
+ * @param window_size 
+ * @param period_starts 
+ * @param interval_length 
+ * @param exclude 
+ * @param k 
+ * @param exclude_diagonal 
+ * @return auto 
+ */
 template <typename array_value_t, typename array_index_t>
 auto BIMP_kNN(array_value_t &time_series,
               const int window_size,
@@ -145,6 +158,21 @@ auto BIMP_kNN(array_value_t &time_series,
     return std::make_pair(matrix_profile, profile_index);
 }
 
+
+/**
+ * @brief Compute the left ckNN IMP with BIMP
+ * 
+ * @tparam array_value_t 
+ * @tparam array_index_t 
+ * @param time_series 
+ * @param window_size 
+ * @param period_starts 
+ * @param interval_length 
+ * @param exclude 
+ * @param k 
+ * @param exclude_diagonal 
+ * @return auto 
+ */
 template <typename array_value_t, typename array_index_t>
 auto left_BIMP_kNN(array_value_t &time_series,
               const int window_size,
@@ -277,6 +305,20 @@ auto left_BIMP_kNN(array_value_t &time_series,
     return std::make_pair(matrix_profile, profile_index);
 }
 
+/**
+ * @brief Compute the right ckNN IMP with BIMP
+ * 
+ * @tparam array_value_t 
+ * @tparam array_index_t 
+ * @param time_series 
+ * @param window_size 
+ * @param period_starts 
+ * @param interval_length 
+ * @param exclude 
+ * @param k 
+ * @param exclude_diagonal 
+ * @return auto 
+ */
 template <typename array_value_t, typename array_index_t>
 auto right_BIMP_kNN(array_value_t &time_series,
               const int window_size,
