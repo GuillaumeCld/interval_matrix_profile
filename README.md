@@ -61,9 +61,7 @@ cd build
 ./experiments/numerical_error
 ```
 
-
-
-## Case studies with the notebooks 
+## Case studies with the notebooks 
 
 The Climate Pulse is available in /Data/climate_pulse/ or directly downloadable from [Climate Pulse](https://pulse.climate.copernicus.eu/).
 

@@ -1,7 +1,7 @@
 # Usage: bash scripts/imp_k_impact.sh imp_k_impact
 
 # Check if the correct number of arguments are provided
-if [ "$#" -ne 3 ]; then
+if [ "$#" -ne 1 ]; then
     echo "Usage: $0  <output_file>"
     exit 1
 fi

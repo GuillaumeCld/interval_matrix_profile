@@ -13,11 +13,11 @@ output_file=$3
 
 # Create the output files
 bf_file="./scripts/output_files/${output_file}_bf.txt"
-stomp_file="./scripts/output_files/${output_file}_stomp.txt"
+aamp_file="./scripts/output_files/${output_file}_aamp.txt"
 block_file="./scripts/output_files/${output_file}_block.txt"
 
 echo "L,Time" > $bf_file
-echo "L,Time" > $stomp_file
+echo "L,Time" > $aamp_file
 echo "L,Time" > $block_file
 
 # Loop to run the experiment 20 times with different thread numbers
@@ -29,11 +29,11 @@ do
     TIME=$(grep "BF" res_tmp | awk '{print $2}')
     echo "$size,${TIME}" >> $bf_file
     TIME=$(grep "AAMP" res_tmp | awk '{print $2}')
-    echo "$size,${TIME}" >> $stomp_file
+    echo "$size,${TIME}" >> $aamp_file
     TIME=$(grep "BLOCK" res_tmp | awk '{print $2}')
     echo "$size,${TIME}" >> $block_file
     rm res_tmp
 done
 
 # Generate the plots
-gnuplot -c scripts/gnuplots/imp_interval_impact.gp $bf_file $stomp_file $block_file 
+gnuplot -c scripts/gnuplots/imp_interval_impact.gp $bf_file $aamp_file $block_file 

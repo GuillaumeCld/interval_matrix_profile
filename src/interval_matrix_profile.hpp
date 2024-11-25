@@ -162,23 +162,30 @@ auto modified_AAMP(array_value_t &time_series,
             auto min = std::numeric_limits<value_t>::max();
             int min_index = 0;
             const int i_pos = i - i_start;
-            for (int j = n_sequence - 1; j >= 0; --j)
+
+
+            if (i == 0)
             {
-                // Compute Euclidean distance for the current sequence
-                if (i == 0 or j == 0)
+                for (int j = n_sequence - 1; j >= 0; --j)
                 {
                     auto view = std::span(&time_series[i], window_size);
                     const auto distance = dotProduct(view, std::span(&time_series[j], window_size));
                     row_values[j] = distance;
-                }
-                else
-                {
-                    const auto prev_data{time_series[i - 1] - time_series[j - 1]};
-                    const auto next_data{time_series[i + window_size - 1] - time_series[j + window_size - 1]};
-                    const auto distance = row_values[j - 1] + (next_data * next_data - prev_data * prev_data);
-                    row_values[j] = distance;
-                }
+                } 
             }
+
+            for (int j = n_sequence - 1; j > 0; --j)
+            {
+                const auto prev_data{time_series[i - 1] - time_series[j - 1]};
+                const auto next_data{time_series[i + window_size - 1] - time_series[j + window_size - 1]};
+                const auto distance = row_values[j - 1] + (next_data * next_data - prev_data * prev_data);
+                row_values[j] = distance;
+            }
+
+            auto view = std::span(&time_series[i], window_size);
+            const auto distance = dotProduct(view, std::span(&time_series[0], window_size));
+            row_values[0] = distance;
+                
             for (int j_period = 0; j_period < n_periods_i; ++j_period)
             {
                 const int j_start = std::max(period_starts[j_period] + i_pos - half_interval, 0);
