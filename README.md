@@ -63,7 +63,7 @@ cd build
 
 ## Case studies with the notebooks 
 
-The Climate Pulse is available in /Data/climate_pulse/ or directly downloadable from [Climate Pulse](https://pulse.climate.copernicus.eu/).
+The Climate Pulse data is available in /Data/climate_pulse/ or directly downloadable from [Climate Pulse](https://pulse.climate.copernicus.eu/).
 
 The Mediterranean sea surface temperature data is available in /Data/SST/.
 
