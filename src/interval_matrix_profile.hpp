@@ -12,6 +12,7 @@
 #include "distance.hpp"
 #include "block.hpp"
 #include "vblock.hpp"
+#include "dtw.hpp"
 
 /**
  * @brief Interval Matrix Profile algorithm using the brute force procedure.
@@ -614,6 +615,108 @@ auto interval_matrix_profile_brute_force_bad_NN(array_value_t &time_series,
             const pair_t min_pair = heap.top();
             matrix_profile[i] = std::sqrt(min_pair.value);
             profile_index[i] = min_pair.index;
+        }
+    }
+
+    return std::make_pair(matrix_profile, profile_index);
+}
+
+
+
+/**
+ * @brief Compute the DTW Interval Matrix Profile using the brute force procedure.
+ * 
+ * @tparam array_value_t 
+ * @tparam array_index_t 
+ * @param time_series 
+ * @param window_size 
+ * @param period_starts 
+ * @param interval_length 
+ * @param exclude 
+ * @return auto 
+ */
+template <typename array_value_t, typename array_index_t>
+auto DTW_IMP_bf(array_value_t &time_series,
+                                         const int window_size,
+                                         array_index_t const &period_starts,
+                                         const int interval_length,
+                                         const int exclude)
+{
+    using value_t = array_value_t::value_type;
+    using index_t = array_index_t::value_type;
+
+    const int n = time_series.size();
+    const int n_sequence = n - window_size + 1;
+    std::vector<value_t> matrix_profile(n_sequence, std::numeric_limits<value_t>::max());
+    std::vector<index_t> profile_index(n_sequence, 0);
+    const int half_interval = interval_length / 2;
+    bool is_periodic = window_size <= half_interval;
+    const int n_periods_i = period_starts.size();
+
+    #pragma omp parallel for schedule(static)
+    for (int i_period = 0; i_period < n_periods_i; ++i_period)
+    {
+        const int i_start = period_starts[i_period];
+        const int i_end = (i_period == n_periods_i - 1) ? n_sequence : period_starts[i_period + 1];
+        for (int i = i_start; i < i_end; ++i)
+        {
+            int place_in_period = i - i_start;
+
+            std::span<value_t> view = std::span(&time_series[i], window_size);
+            auto min = std::numeric_limits<value_t>::max();
+            int min_index = 0;
+            const int i_pos = i - i_start;
+
+            for (int j_period = 0; j_period < n_periods_i; ++j_period)
+            {
+                const int j_start = std::max(period_starts[j_period] + place_in_period - half_interval, 0);
+                const int j_end = std::min(period_starts[j_period] + place_in_period + half_interval + 1, n_sequence);
+                for (int j = j_start; j < j_end; ++j)
+                {
+                    // Compute Euclidean distance for the current sequence
+                    const auto distance = dtw(view, std::span(&time_series[j], window_size));
+                    if (distance < min and (j < i - exclude or j > i + exclude))
+                    {
+                        min = distance;
+                        min_index = j;
+                    }
+                }
+            }
+
+            if (i_end - i <= half_interval)
+            {
+                const int j_start = 0;
+                const int j_end = half_interval - (i_end - i)+1;
+                for (int j = j_start; j < j_end; ++j)
+                {
+                    const auto distance = dtw(view, std::span(&time_series[j], window_size));
+                    if (distance < min and (j < i - exclude or j > i + exclude))
+                    {
+                        min = distance;
+                        min_index = j;
+                    }
+                }
+            }
+
+            if (is_periodic and i - i_start <= half_interval)
+            {
+
+                const int j_start = n + i_pos - half_interval;
+                const int j_end = n_sequence;
+
+                for (int j = j_start; j < j_end; ++j)
+                {
+                    // Compute Euclidean distance for the current sequence
+                    const auto distance = dtw(view, std::span(&time_series[j], window_size));
+                    if (distance < min and (j < i - exclude or j > i + exclude))
+                    {
+                        min = distance;
+                        min_index = j;
+                    }
+                }
+            }
+            matrix_profile[i] = std::sqrt(min);
+            profile_index[i] = min_index;
         }
     }
 

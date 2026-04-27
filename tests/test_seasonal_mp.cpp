@@ -46,7 +46,7 @@ TEST(SeasonalMatrixProfileTest, SameResult_blocking_sst)
     // Calculate the matrix profile using the three methods
     auto result_brute_force_blocking = seasonal_matrix_profile_brute_force_blocking(data, window_size, exclude, seasons);
     std::vector<double> seasonal_matrix_profile_brute_force_blocking = std::get<0>(result_brute_force_blocking);
-    auto result_stomp = seasonal_matrix_profile_STOMP_blocking(data, window_size, exclude, seasons);
+    auto result_stomp = BSMP(data, window_size, exclude, seasons);
     std::vector<double> seasonal_matrix_profile_STOMP_blocking = std::get<0>(result_stomp);
 
     for (int i = 0; i < seasonal_matrix_profile_STOMP_blocking.size(); ++i)

@@ -79,7 +79,7 @@ public:
     /**
      * @brief Compute the minimum per row in the block using the STOMP procedure.
      */
-    inline void STOMP()
+    inline void compute()
     {
         std::vector<T> row(_width, 0);
         int global_i = _global_i;

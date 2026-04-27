@@ -18,6 +18,7 @@ add_executable(
     test_mp.cpp
     test_seasonal_mp.cpp
     test_interval_mp.cpp
+    test_outer.cpp
 )
 target_link_libraries(
     tests

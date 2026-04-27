@@ -1,10 +1,10 @@
-name: imp
+name: imp3.12
 channels:
   - conda-forge
   - defaults
 
 dependencies:
-  - python
+  - python=3.12
   - numpy 
   - pandas
   - matplotlib
@@ -14,3 +14,4 @@ dependencies:
   - pybind11
   - pip:
     - kaleido
+    - TSB-UAD

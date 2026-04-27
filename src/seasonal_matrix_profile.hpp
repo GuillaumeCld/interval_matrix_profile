@@ -153,15 +153,19 @@ auto seasonal_matrix_profile_brute_force_blocking(std::vector<T> &data,
  * @param seasons The seasonal patterns represented as a vector of vector of pairs, where each pair represents the start and end indices of a season.
  * @return A tuple containing the matrix profile and the profile index.
  */
-template <typename T>
-auto seasonal_matrix_profile_STOMP_blocking(std::vector<T> &data,
-                                            const int window_size,
-                                            const int exclude,
-                                            std::vector<std::vector<std::pair<int, int>>> const &seasons)
+template <typename array_value_t>
+auto BSMP(array_value_t &data,
+            const int window_size,
+            const int exclude,
+            std::vector<std::vector<std::pair<int, int>>> const &seasons)
 {
+
+    using value_t = array_value_t::value_type;
+    using pair_t = min_pair<value_t>;
+
     const int n_sequence = data.size() - window_size + 1;
-    std::vector<T> matrix_profile(n_sequence, std::numeric_limits<T>::max());
-    std::vector<int> profile_index(n_sequence, 0);
+    std::vector<value_t> matrix_profile(n_sequence, std::numeric_limits<value_t>::max());
+    std::vector<int> profile_index(n_sequence, -1);
 
     #pragma omp parallel default(none) \
     shared(data, matrix_profile, profile_index, n_sequence, window_size, exclude, seasons)
@@ -169,10 +173,8 @@ auto seasonal_matrix_profile_STOMP_blocking(std::vector<T> &data,
     {
         for (const auto &season : seasons)
         {
-
             for (const auto &pair_row : season)
             {
-
                 #pragma omp task default(none)                                                \
                 shared(data, n_sequence, window_size, exclude, matrix_profile, profile_index) \
                 firstprivate(season, pair_row)                                                \
@@ -182,14 +184,14 @@ auto seasonal_matrix_profile_STOMP_blocking(std::vector<T> &data,
                     const int end_row{pair_row.second};
                     const int height{end_row - start_row};
 
-                    std::vector<min_pair<T>> local_min_row(height, min_pair<T>{-1, std::numeric_limits<T>::max()});
+                    std::vector<pair_t> local_min_row(height, pair_t{-1, std::numeric_limits<value_t>::max()});
                     for (const auto &pair_column : season)
                     {
                         const int start_column{pair_column.first};
                         const int end_column{pair_column.second};
                         const int width{end_column - start_column};
 
-                        square_block<T> square_block(
+                        square_block<value_t> square_block(
                             n_sequence,
                             window_size,
                             exclude,
@@ -200,7 +202,7 @@ auto seasonal_matrix_profile_STOMP_blocking(std::vector<T> &data,
                             local_min_row,
                             data);
 
-                        square_block.STOMP();
+                        square_block.compute();
                         local_min_row = std::move(square_block.get_local_min_rows());
                     }
                     for (int i = 0; i < height; ++i)

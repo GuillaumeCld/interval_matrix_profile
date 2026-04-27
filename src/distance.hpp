@@ -18,7 +18,6 @@ inline auto euclideanDistance(std::span<T, N> const &x, std::span<T, N> const &y
 {
 
     static_assert(std::is_floating_point<T>::value, " works only with floating values");
-    // T distance = std::inner_product(x.begin(), x.end(), y.begin(), T(0));
     auto distance = T(0);
     for (int i = 0; i < x.size(); ++i)
     {

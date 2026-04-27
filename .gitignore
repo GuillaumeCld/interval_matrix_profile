@@ -3,10 +3,23 @@ build/
 
 Data/benchmark
 Data/benchmark/*
-
+Data/TSB-AD-U
+Data/*.zip
+Data/*.tar.gz
+Data/*.RD*
+Data/SST/*.nc
+Data/*/*.gz
+Data/**/*.csv
+Data/*/*.txt
 src/_*
 
 scripts/Figures/*
 scripts/output_files/*
-
+notebooks/gecco*
+notebooks/nab*
+notebooks/*enchmark*
 notebooks/Figures/*
+notebooks/*.pdf
+notebooks/*.png
+notebooks/.ipynb_checkpoints/*
+*.ipynb_checkpoints/*
